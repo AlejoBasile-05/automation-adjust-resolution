@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   const config = await loadConfig(CONFIG_PATH);
   const runManager = new RunManager();
-  const app = createApp(config, runManager);
+  const app = createApp(config, runManager, { configPath: CONFIG_PATH });
   const httpServer = http.createServer(app);
   attachWebSocketServer(httpServer, runManager);
 

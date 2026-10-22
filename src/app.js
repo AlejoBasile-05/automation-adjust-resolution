@@ -4,7 +4,7 @@ const express = require('express');
 
 const { createPipeline } = require('./pipeline/orchestrator');
 const { discover } = require('./pipeline/discover');
-const { DEFAULT_CONFIG } = require('./config');
+const { DEFAULT_CONFIG, loadConfig, saveConfig } = require('./config');
 const { RunManager } = require('./ws/runManager');
 
 function pickRunId(candidate) {
@@ -12,16 +12,47 @@ function pickRunId(candidate) {
   return randomUUID();
 }
 
-function createApp(config = DEFAULT_CONFIG, runManager = new RunManager()) {
+function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), options = {}) {
   const app = express();
   app.use(express.json());
 
+  const configPath = options.configPath || null;
+
+  const readConfig = async () => (configPath ? loadConfig(configPath) : config);
+  const writeConfig = async (next) => {
+    if (configPath) {
+      await saveConfig(configPath, next);
+    } else {
+      Object.assign(config, next);
+    }
+    return next;
+  };
+
+  app.get('/api/config', async (req, res) => {
+    try {
+      res.json(await readConfig());
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put('/api/config', async (req, res) => {
+    try {
+      const current = await readConfig();
+      const next = { ...current, ...(req.body ?? {}) };
+      res.json(await writeConfig(next));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post('/api/process', async (req, res) => {
     const body = req.body ?? {};
-    const runConfig = { ...config, ...body };
     const runId = pickRunId(body.runId);
 
     try {
+      const current = await readConfig();
+      const runConfig = { ...current, ...body };
       // Count the batch up front so subscribers receive `started` with the
       // total before the first per-file event.
       const files = await discover(runConfig.sourcePath);
