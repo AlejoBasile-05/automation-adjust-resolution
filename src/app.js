@@ -34,6 +34,15 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager()) {
     }
   });
 
+  app.get('/api/errors/:runId', (req, res) => {
+    const errors = runManager.errorsFor(req.params.runId);
+    if (errors === null) {
+      res.status(404).json({ error: 'Run not found' });
+      return;
+    }
+    res.json({ runId: req.params.runId, errors });
+  });
+
   return app;
 }
 

@@ -12,6 +12,8 @@ const { WebSocket } = require('ws');
 class RunManager {
   constructor() {
     this.runs = new Map();
+    // Kept after teardown so a finished run's errors stay queryable over HTTP.
+    this.errorsByRun = new Map();
   }
 
   has(runId) {
@@ -41,6 +43,7 @@ class RunManager {
     run.pipeline = pipeline;
     run.total = total;
     run.started = true;
+    this.errorsByRun.set(runId, []);
 
     this.broadcast(run, { type: 'started', runId, total });
 
@@ -52,12 +55,16 @@ class RunManager {
           processed: event.processed,
           total: event.total,
         }),
-      error: (event) =>
+      error: (event) => {
+        const payload = this.toErrorPayload(event);
+        this.recordError(runId, payload);
         this.broadcast(run, {
           type: 'error',
-          file: event.file,
-          message: event.error ? event.error.message : String(event.error),
-        }),
+          file: payload.file,
+          message: payload.message,
+          error: payload,
+        });
+      },
       done: (summary) => {
         this.broadcast(run, {
           type: 'done',
@@ -74,6 +81,30 @@ class RunManager {
     pipeline.on('done', run.listeners.done);
 
     return run;
+  }
+
+  /** Structured errors recorded for a run, or null when the run is unknown. */
+  errorsFor(runId) {
+    const errors = this.errorsByRun.get(runId);
+    return errors ? [...errors] : null;
+  }
+
+  recordError(runId, error) {
+    const errors = this.errorsByRun.get(runId);
+    if (errors) errors.push(error);
+    else this.errorsByRun.set(runId, [error]);
+  }
+
+  toErrorPayload(event) {
+    const error = event.error;
+    if (error && typeof error.toJSON === 'function') return error.toJSON();
+    return {
+      code: 'RESIZE_FAILED',
+      file: event.file,
+      stage: 'resize',
+      message: error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    };
   }
 
   unregister(runId, socket) {
