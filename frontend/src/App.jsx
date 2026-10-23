@@ -9,10 +9,12 @@ import { getConfig, saveConfig } from './services/api.js';
 import { hasErrors, normalizeConfig, validateConfig } from './services/validation.js';
 
 const FALLBACK_CONFIG = {
+  schemaVersion: 2,
   sourcePath: '',
   destPath: '',
-  width: 800,
-  height: 600,
+  widthCm: 10,
+  heightCm: 7.5,
+  dpi: 300,
   fit: 'inside',
   quality: 80,
   format: 'jpeg',
@@ -99,7 +101,9 @@ export default function App() {
           </div>
 
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-mist-400">
-            {loading ? 'Cargando configuración' : `${values.width}×${values.height} · ${values.format}`}
+            {loading
+              ? 'Cargando configuración'
+              : `${values.widthCm} × ${values.heightCm} cm · ${values.dpi} dpi`}
           </p>
         </div>
       </header>

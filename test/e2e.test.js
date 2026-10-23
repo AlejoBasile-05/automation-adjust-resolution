@@ -54,7 +54,14 @@ describe('end-to-end run against the real server (S1-S5)', () => {
     const response = await fetch(`${baseUrl}/api/process`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ runId, sourcePath, destPath, width: 400, height: 300 }),
+      body: JSON.stringify({
+        runId,
+        sourcePath,
+        destPath,
+        widthCm: 10.16,
+        heightCm: 7.62,
+        dpi: 100,
+      }),
     });
     const summary = await response.json();
 
@@ -93,12 +100,12 @@ describe('end-to-end run against the real server (S1-S5)', () => {
     const put = await fetch(`${baseUrl}/api/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ width: 1234, height: 567 }),
+      body: JSON.stringify({ widthCm: 21, heightCm: 14.8, dpi: 200 }),
     });
     expect(put.status).toBe(200);
 
     const get = await fetch(`${baseUrl}/api/config`);
     expect(get.status).toBe(200);
-    await expect(get.json()).resolves.toMatchObject({ width: 1234, height: 567 });
+    await expect(get.json()).resolves.toMatchObject({ widthCm: 21, heightCm: 14.8, dpi: 200 });
   });
 });

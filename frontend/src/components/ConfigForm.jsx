@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { cmToPx } from '../services/units.js';
 import { hasErrors, normalizeConfig, validateConfig } from '../services/validation.js';
 
 const FIT_OPTIONS = [
@@ -58,7 +59,14 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setTouched({ sourcePath: true, destPath: true, width: true, height: true, quality: true });
+    setTouched({
+      sourcePath: true,
+      destPath: true,
+      widthCm: true,
+      heightCm: true,
+      dpi: true,
+      quality: true,
+    });
     if (hasErrors(errors)) return;
     onSave(normalizeConfig(values));
   };
@@ -120,34 +128,58 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
         </Section>
 
         <Section index="02" title="Geometría">
-          <Field id="width" label="Ancho" hint="px" error={errorFor('width')}>
+          <Field id="widthCm" label="Ancho (cm)" error={errorFor('widthCm')}>
             <input
-              id="width"
+              id="widthCm"
               type="number"
-              inputMode="numeric"
-              min="1"
-              step="1"
-              value={values.width}
-              onChange={update('width')}
-              onBlur={touch('width')}
-              aria-invalid={Boolean(errorFor('width'))}
-              aria-describedby={errorFor('width') ? 'width-error' : undefined}
+              inputMode="decimal"
+              min="0.1"
+              max="1000"
+              step="0.1"
+              value={values.widthCm}
+              onChange={update('widthCm')}
+              onBlur={touch('widthCm')}
+              aria-invalid={Boolean(errorFor('widthCm'))}
+              aria-describedby={errorFor('widthCm') ? 'widthCm-error' : undefined}
               className={inputClasses}
             />
           </Field>
 
-          <Field id="height" label="Alto" hint="px" error={errorFor('height')}>
+          <Field id="heightCm" label="Alto (cm)" error={errorFor('heightCm')}>
             <input
-              id="height"
+              id="heightCm"
+              type="number"
+              inputMode="decimal"
+              min="0.1"
+              max="1000"
+              step="0.1"
+              value={values.heightCm}
+              onChange={update('heightCm')}
+              onBlur={touch('heightCm')}
+              aria-invalid={Boolean(errorFor('heightCm'))}
+              aria-describedby={errorFor('heightCm') ? 'heightCm-error' : undefined}
+              className={inputClasses}
+            />
+          </Field>
+
+          <Field
+            id="dpi"
+            label="Resolución (DPI)"
+            hint="píxeles por pulgada"
+            error={errorFor('dpi')}
+          >
+            <input
+              id="dpi"
               type="number"
               inputMode="numeric"
               min="1"
+              max="1200"
               step="1"
-              value={values.height}
-              onChange={update('height')}
-              onBlur={touch('height')}
-              aria-invalid={Boolean(errorFor('height'))}
-              aria-describedby={errorFor('height') ? 'height-error' : undefined}
+              value={values.dpi}
+              onChange={update('dpi')}
+              onBlur={touch('dpi')}
+              aria-invalid={Boolean(errorFor('dpi'))}
+              aria-describedby={errorFor('dpi') ? 'dpi-error' : undefined}
               className={inputClasses}
             />
           </Field>
@@ -167,6 +199,16 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
                 ))}
               </select>
             </Field>
+          </div>
+
+          <div className="sm:col-span-2">
+            <p
+              data-testid="px-preview"
+              aria-live="polite"
+              className="rounded-lg border border-ink-600/70 bg-ink-900/60 px-3.5 py-2.5 font-mono text-sm text-mist-200"
+            >
+              ≈ {cmToPx(values.widthCm, values.dpi)} × {cmToPx(values.heightCm, values.dpi)} px
+            </p>
           </div>
         </Section>
 

@@ -18,10 +18,12 @@ vi.mock('../src/hooks/useRunStream.js', () => ({
 }));
 
 const stored = {
+  schemaVersion: 2,
   sourcePath: '/photos/in',
   destPath: '/photos/out',
-  width: 1920,
-  height: 1080,
+  widthCm: 10,
+  heightCm: 7.5,
+  dpi: 300,
   fit: 'inside',
   quality: 80,
   format: 'jpeg',
@@ -57,8 +59,16 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByLabelText(/carpeta de origen/i)).toHaveValue('/photos/in');
-    expect(screen.getByLabelText(/^ancho/i)).toHaveValue(1920);
+    expect(screen.getByLabelText(/^ancho/i)).toHaveValue(10);
+    expect(screen.getByLabelText(/^alto/i)).toHaveValue(7.5);
+    expect(screen.getByLabelText(/resolución \(dpi\)/i)).toHaveValue(300);
     expect(getConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('summarizes the geometry in centimeters and DPI in the header', async () => {
+    render(<App />);
+
+    expect(await screen.findByText('10 × 7.5 cm · 300 dpi')).toBeInTheDocument();
   });
 
   it('saves edited values through PUT /api/config and confirms it (S6)', async () => {
@@ -72,7 +82,7 @@ describe('App', () => {
 
     await waitFor(() =>
       expect(saveConfig).toHaveBeenCalledWith(
-        expect.objectContaining({ sourcePath: '/photos/new-in', width: 1920 }),
+        expect.objectContaining({ sourcePath: '/photos/new-in', widthCm: 10 }),
       ),
     );
     expect(await screen.findByRole('status')).toHaveTextContent(/configuración guardada/i);
@@ -92,8 +102,9 @@ describe('App', () => {
       expect.objectContaining({
         sourcePath: '/photos/in',
         destPath: '/photos/out',
-        width: 1920,
-        height: 1080,
+        widthCm: 10,
+        heightCm: 7.5,
+        dpi: 300,
       }),
     );
   });

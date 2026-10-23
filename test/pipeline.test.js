@@ -177,8 +177,9 @@ describe('T1.4 — orchestrator: discover → resize → write pipeline', () => 
     const pipeline = createPipeline({
       sourcePath,
       destPath,
-      width: 40,
-      height: 40,
+      widthCm: 1.02,
+      heightCm: 1.02,
+      dpi: 100,
       fit: 'inside',
     });
     const progress = [];
@@ -210,8 +211,9 @@ describe('T1.4 — orchestrator: discover → resize → write pipeline', () => 
     const pipeline = createPipeline({
       sourcePath,
       destPath,
-      width: 30,
-      height: 30,
+      widthCm: 0.76,
+      heightCm: 0.76,
+      dpi: 100,
       fit: 'inside',
     });
     const errors = [];
@@ -237,10 +239,12 @@ describe('config — JSON persistence', () => {
   test('saves and loads configuration round-trip', async () => {
     const configPath = path.join(tmpRoot, 'nested', 'config.json');
     const config = {
+      schemaVersion: 2,
       sourcePath: '/in',
       destPath: '/out',
-      width: 800,
-      height: 600,
+      widthCm: 10,
+      heightCm: 7.5,
+      dpi: 300,
       fit: 'fill',
       quality: 80,
       format: 'webp',
@@ -254,12 +258,12 @@ describe('config — JSON persistence', () => {
 
   test('merges partial stored config over defaults', async () => {
     const configPath = path.join(tmpRoot, 'config.json');
-    fs.writeFileSync(configPath, JSON.stringify({ width: 320 }));
+    fs.writeFileSync(configPath, JSON.stringify({ schemaVersion: 2, widthCm: 320 }));
 
     const loaded = await loadConfig(configPath);
 
-    expect(loaded.width).toBe(320);
-    expect(loaded.height).toBe(DEFAULT_CONFIG.height);
+    expect(loaded.widthCm).toBe(320);
+    expect(loaded.heightCm).toBe(DEFAULT_CONFIG.heightCm);
     expect(loaded.fit).toBe(DEFAULT_CONFIG.fit);
   });
 });
@@ -274,7 +278,7 @@ describe('T1.5 — POST /api/process', () => {
     const app = createApp();
     const response = await request(app)
       .post('/api/process')
-      .send({ sourcePath, destPath, width: 40, height: 40, fit: 'inside' });
+      .send({ sourcePath, destPath, widthCm: 1.02, heightCm: 1.02, dpi: 100, fit: 'inside' });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ total: 2, processed: 2, errors: [] });
