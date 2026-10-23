@@ -5,7 +5,7 @@ import ErrorList from './components/ErrorList.jsx';
 import ProgressPanel from './components/ProgressPanel.jsx';
 import RunControls from './components/RunControls.jsx';
 import useRunStream from './hooks/useRunStream.js';
-import { getConfig, saveConfig } from './services/api.js';
+import { getConfig, pickFolder, saveConfig } from './services/api.js';
 import { hasErrors, normalizeConfig, validateConfig } from './services/validation.js';
 
 const FALLBACK_CONFIG = {
@@ -30,6 +30,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [pickingField, setPickingField] = useState(null);
+  const [pickerError, setPickerError] = useState(null);
 
   const { status, processed, total, currentFile, errors, errorMessage, start, reset } =
     useRunStream();
@@ -73,6 +75,24 @@ export default function App() {
       setSaving(false);
     }
   }, []);
+
+  const handlePickFolder = useCallback(
+    async (field) => {
+      setPickerError(null);
+      setPickingField(field);
+      try {
+        const result = await pickFolder(values[field]);
+        if (result && typeof result.path === 'string' && result.path.length > 0) {
+          setValues((current) => ({ ...current, [field]: result.path }));
+        }
+      } catch (error) {
+        setPickerError(error);
+      } finally {
+        setPickingField(null);
+      }
+    },
+    [values]
+  );
 
   const validationErrors = useMemo(() => validateConfig(values), [values]);
   const canStart = !hasErrors(validationErrors) && status !== 'running';
@@ -153,6 +173,9 @@ export default function App() {
             values={values}
             onChange={handleChange}
             onSave={handleSave}
+            onPickFolder={handlePickFolder}
+            pickingField={pickingField}
+            pickerError={pickerError}
             disabled={saving || status === 'running'}
           />
 

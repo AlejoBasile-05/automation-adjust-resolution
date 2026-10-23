@@ -5,6 +5,7 @@ const express = require('express');
 const { createPipeline } = require('./pipeline/orchestrator');
 const { discover } = require('./pipeline/discover');
 const { DEFAULT_CONFIG, loadConfig, saveConfig } = require('./config');
+const { pickFolder: defaultPickFolder } = require('./folders/pickFolder');
 const { RunManager } = require('./ws/runManager');
 
 function pickRunId(candidate) {
@@ -17,6 +18,7 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), optio
   app.use(express.json());
 
   const configPath = options.configPath || null;
+  const pickFolder = options.pickFolder || defaultPickFolder;
 
   const readConfig = async () => (configPath ? loadConfig(configPath) : config);
   const writeConfig = async (next) => {
@@ -61,6 +63,24 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), optio
       const summary = await pipeline.run();
       res.json(summary);
     } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/pick-folder', async (req, res) => {
+    const initialPath = typeof req.query.initial === 'string' ? req.query.initial : '';
+
+    try {
+      res.json(await pickFolder({ initialPath }));
+    } catch (error) {
+      if (error.code === 'UNSUPPORTED') {
+        res.status(501).json({ error: 'El selector de carpetas no está disponible en este sistema.' });
+        return;
+      }
+      if (error.code === 'TIMEOUT') {
+        res.status(408).json({ error: 'El selector de carpetas no respondió a tiempo.' });
+        return;
+      }
       res.status(500).json({ error: error.message });
     }
   });

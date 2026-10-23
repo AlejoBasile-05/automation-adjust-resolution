@@ -17,7 +17,7 @@ const loaded = {
   format: 'jpeg',
 };
 
-function Harness({ initial, onChange, onSave }) {
+function Harness({ initial, onChange, onSave, onPickFolder, pickingField, pickerError }) {
   const [values, setValues] = useState(initial);
   return (
     <ConfigForm
@@ -27,15 +27,20 @@ function Harness({ initial, onChange, onSave }) {
         setValues((current) => ({ ...current, [field]: value }));
       }}
       onSave={onSave}
+      onPickFolder={onPickFolder}
+      pickingField={pickingField}
+      pickerError={pickerError}
     />
   );
 }
 
-function setup(overrides = {}) {
+function setup(overrides = {}, props = {}) {
   const onChange = vi.fn();
   const onSave = vi.fn();
   const values = { ...loaded, ...overrides };
-  render(<Harness initial={values} onChange={onChange} onSave={onSave} />);
+  render(
+    <Harness initial={values} onChange={onChange} onSave={onSave} onPickFolder={vi.fn()} {...props} />
+  );
   return { onChange, onSave, values, user: userEvent.setup() };
 }
 
@@ -111,6 +116,54 @@ describe('ConfigForm', () => {
     expect(
       screen.getByText('La resolución debe ser un número entero entre 1 y 1200.')
     ).toBeInTheDocument();
+  });
+
+  it('calls onPickFolder with the source field when its Elegir button is clicked', async () => {
+    const onPickFolder = vi.fn();
+    const { user } = setup({}, { onPickFolder });
+
+    await user.click(screen.getByRole('button', { name: /elegir ruta de origen/i }));
+
+    expect(onPickFolder).toHaveBeenCalledWith('sourcePath');
+  });
+
+  it('calls onPickFolder with the destination field when its Elegir button is clicked', async () => {
+    const onPickFolder = vi.fn();
+    const { user } = setup({}, { onPickFolder });
+
+    await user.click(screen.getByRole('button', { name: /elegir ruta de destino/i }));
+
+    expect(onPickFolder).toHaveBeenCalledWith('destPath');
+  });
+
+  it('shows a pending state on the picking field and keeps the inputs editable', async () => {
+    const { user } = setup({}, { pickingField: 'sourcePath' });
+
+    const sourceButton = screen.getByRole('button', { name: /elegir ruta de origen/i });
+    expect(sourceButton).toBeDisabled();
+    expect(sourceButton).toHaveTextContent('…');
+    expect(screen.getByRole('button', { name: /elegir ruta de destino/i })).toHaveTextContent(
+      'Elegir…'
+    );
+
+    const source = screen.getByLabelText(/carpeta de origen/i);
+    expect(source).not.toBeDisabled();
+    await user.type(source, '/typed');
+    expect(source).toHaveValue('/photos/in/typed');
+  });
+
+  it('shows the fallback message when the picker is unavailable (501)', () => {
+    setup({}, { pickerError: { status: 501 } });
+
+    expect(
+      screen.getByText('El selector no está disponible en este sistema. Escribí la ruta manualmente.')
+    ).toBeInTheDocument();
+  });
+
+  it('shows a generic message for other picker failures', () => {
+    setup({}, { pickerError: { status: 500 } });
+
+    expect(screen.getByText('No se pudo abrir el selector de carpetas.')).toBeInTheDocument();
   });
 
   it('saves valid decimal centimeters and a numeric DPI', async () => {

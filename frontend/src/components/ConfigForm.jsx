@@ -35,6 +35,51 @@ function Field({ id, label, hint, error, children }) {
 const inputClasses =
   'w-full rounded-lg border border-ink-600 bg-ink-900/80 px-3.5 py-2.5 font-mono text-sm text-mist-100 placeholder:text-mist-400/60 transition-colors duration-200 hover:border-ink-600/80 focus:border-copper-400 focus:outline-none focus:ring-2 focus:ring-copper-400/30 motion-reduce:transition-none';
 
+const pickButtonClasses =
+  'shrink-0 rounded-lg border border-ink-600 bg-ink-900/60 px-3.5 py-2.5 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-mist-200 transition-colors duration-200 hover:border-copper-400/60 hover:text-copper-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:cursor-wait disabled:opacity-50 motion-reduce:transition-none';
+
+const PICKER_UNAVAILABLE =
+  'El selector no está disponible en este sistema. Escribí la ruta manualmente.';
+const PICKER_GENERIC_ERROR = 'No se pudo abrir el selector de carpetas.';
+
+function pickerMessage(pickerError) {
+  if (!pickerError) return null;
+  return pickerError.status === 501 ? PICKER_UNAVAILABLE : PICKER_GENERIC_ERROR;
+}
+
+function FolderField({ id, label, hint, error, value, placeholder, onChange, onBlur, onPick, picking }) {
+  const errorId = error ? `${id}-error` : undefined;
+
+  return (
+    <Field id={id} label={label} hint={hint} error={error}>
+      <div className="flex items-stretch gap-2">
+        <input
+          id={id}
+          type="text"
+          spellCheck={false}
+          autoComplete="off"
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          aria-invalid={Boolean(error)}
+          aria-describedby={errorId}
+          className={`${inputClasses} flex-1`}
+        />
+        <button
+          type="button"
+          onClick={() => onPick(id)}
+          disabled={picking}
+          aria-label={`Elegir ruta de ${id === 'sourcePath' ? 'origen' : 'destino'}`}
+          className={pickButtonClasses}
+        >
+          {picking ? '…' : 'Elegir…'}
+        </button>
+      </div>
+    </Field>
+  );
+}
+
 function Section({ index, title, children }) {
   return (
     <fieldset className="grid gap-5 sm:grid-cols-2">
@@ -48,9 +93,18 @@ function Section({ index, title, children }) {
   );
 }
 
-export default function ConfigForm({ values, onChange, onSave, disabled = false }) {
+export default function ConfigForm({
+  values,
+  onChange,
+  onSave,
+  onPickFolder = () => {},
+  pickingField = null,
+  pickerError = null,
+  disabled = false,
+}) {
   const [touched, setTouched] = useState({});
   const errors = validateConfig(values);
+  const folderPickerMessage = pickerMessage(pickerError);
 
   const update = (field) => (event) => onChange(field, event.target.value);
   const touch = (field) => () => setTouched((current) => ({ ...current, [field]: true }));
@@ -81,50 +135,45 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
       <div className="grid gap-8">
         <Section index="01" title="Carpetas">
           <div className="sm:col-span-2">
-            <Field
+            <FolderField
               id="sourcePath"
               label="Carpeta de origen"
               hint="se escanea de forma recursiva"
               error={errorFor('sourcePath')}
-            >
-              <input
-                id="sourcePath"
-                type="text"
-                spellCheck={false}
-                autoComplete="off"
-                placeholder="/Users/you/Photos/originals"
-                value={values.sourcePath}
-                onChange={update('sourcePath')}
-                onBlur={touch('sourcePath')}
-                aria-invalid={Boolean(errorFor('sourcePath'))}
-                aria-describedby={errorFor('sourcePath') ? 'sourcePath-error' : undefined}
-                className={inputClasses}
-              />
-            </Field>
+              value={values.sourcePath}
+              placeholder="/Users/you/Photos/originals"
+              onChange={update('sourcePath')}
+              onBlur={touch('sourcePath')}
+              onPick={onPickFolder}
+              picking={pickingField === 'sourcePath'}
+            />
           </div>
 
           <div className="sm:col-span-2">
-            <Field
+            <FolderField
               id="destPath"
               label="Carpeta de destino"
               hint="se crea si no existe"
               error={errorFor('destPath')}
-            >
-              <input
-                id="destPath"
-                type="text"
-                spellCheck={false}
-                autoComplete="off"
-                placeholder="/Users/you/Photos/resized"
-                value={values.destPath}
-                onChange={update('destPath')}
-                onBlur={touch('destPath')}
-                aria-invalid={Boolean(errorFor('destPath'))}
-                aria-describedby={errorFor('destPath') ? 'destPath-error' : undefined}
-                className={inputClasses}
-              />
-            </Field>
+              value={values.destPath}
+              placeholder="/Users/you/Photos/resized"
+              onChange={update('destPath')}
+              onBlur={touch('destPath')}
+              onPick={onPickFolder}
+              picking={pickingField === 'destPath'}
+            />
           </div>
+
+          {folderPickerMessage && (
+            <div className="sm:col-span-2">
+              <p
+                role="alert"
+                className="rounded-lg border border-signal-bad/40 bg-signal-bad/10 px-3.5 py-2.5 font-mono text-xs text-signal-bad"
+              >
+                {folderPickerMessage}
+              </p>
+            </div>
+          )}
         </Section>
 
         <Section index="02" title="Geometría">

@@ -43,6 +43,11 @@ export function processBatch(payload) {
   return request('/api/process', { method: 'POST', body: payload });
 }
 
+export function pickFolder(initialPath = '') {
+  const query = initialPath ? `?initial=${encodeURIComponent(initialPath)}` : '';
+  return request(`/api/pick-folder${query}`);
+}
+
 export async function getErrors(runId) {
   try {
     const payload = await request(`/api/errors/${encodeURIComponent(runId)}`);

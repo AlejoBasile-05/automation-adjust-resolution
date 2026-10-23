@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getConfig, getErrors, processBatch, saveConfig } from '../src/services/api.js';
+import { getConfig, getErrors, pickFolder, processBatch, saveConfig } from '../src/services/api.js';
 
 const CONFIG = {
   sourcePath: '',
@@ -64,6 +64,30 @@ describe('api service', () => {
     expect(url).toBe('/api/process');
     expect(options.method).toBe('POST');
     expect(JSON.parse(options.body)).toEqual(payload);
+  });
+
+  it('requests the folder picker with the initial path encoded', async () => {
+    global.fetch.mockResolvedValue(jsonResponse({ path: '/photos/picked' }));
+
+    await expect(pickFolder('/photos/in')).resolves.toEqual({ path: '/photos/picked' });
+
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toBe('/api/pick-folder?initial=%2Fphotos%2Fin');
+    expect(options.method ?? 'GET').toBe('GET');
+  });
+
+  it('requests the folder picker without a query when no initial path is given', async () => {
+    global.fetch.mockResolvedValue(jsonResponse({ canceled: true }));
+
+    await expect(pickFolder('')).resolves.toEqual({ canceled: true });
+
+    expect(global.fetch.mock.calls[0][0]).toBe('/api/pick-folder');
+  });
+
+  it('propagates the HTTP status when the picker is unavailable', async () => {
+    global.fetch.mockResolvedValue(jsonResponse({ error: 'unsupported' }, 501));
+
+    await expect(pickFolder('')).rejects.toMatchObject({ status: 501 });
   });
 
   it('surfaces the backend error message when a request fails', async () => {

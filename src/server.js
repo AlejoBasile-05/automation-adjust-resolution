@@ -19,8 +19,8 @@ async function start(options = {}) {
   const httpServer = http.createServer(app);
   attachWebSocketServer(httpServer, runManager);
 
-  await new Promise((resolve) => httpServer.listen(port, resolve));
-  console.log(`Image resizer backend listening on http://localhost:${httpServer.address().port}`);
+  await new Promise((resolve) => httpServer.listen(port, '127.0.0.1', resolve));
+  console.log(`Image resizer backend listening on http://127.0.0.1:${httpServer.address().port}`);
 
   return httpServer;
 }

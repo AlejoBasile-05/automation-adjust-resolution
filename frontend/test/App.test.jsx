@@ -4,13 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '../src/App.jsx';
 import useRunStream from '../src/hooks/useRunStream.js';
-import { getConfig, saveConfig } from '../src/services/api.js';
+import { getConfig, pickFolder, saveConfig } from '../src/services/api.js';
 
 vi.mock('../src/services/api.js', () => ({
   getConfig: vi.fn(),
   saveConfig: vi.fn(),
   processBatch: vi.fn(),
   getErrors: vi.fn(),
+  pickFolder: vi.fn(),
 }));
 
 vi.mock('../src/hooks/useRunStream.js', () => ({
@@ -107,6 +108,48 @@ describe('App', () => {
         dpi: 300,
       }),
     );
+  });
+
+  it('fills the field with the folder chosen by the native picker', async () => {
+    pickFolder.mockResolvedValue({ path: '/photos/picked' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByLabelText(/carpeta de origen/i);
+    await user.click(screen.getByRole('button', { name: /elegir ruta de origen/i }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/carpeta de origen/i)).toHaveValue('/photos/picked')
+    );
+    expect(pickFolder).toHaveBeenCalledWith('/photos/in');
+  });
+
+  it('leaves the field unchanged when the picker is cancelled', async () => {
+    pickFolder.mockResolvedValue({ canceled: true });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByLabelText(/carpeta de origen/i);
+    await user.click(screen.getByRole('button', { name: /elegir ruta de origen/i }));
+
+    await waitFor(() => expect(pickFolder).toHaveBeenCalledTimes(1));
+    expect(screen.getByLabelText(/carpeta de origen/i)).toHaveValue('/photos/in');
+  });
+
+  it('shows the unavailable message when the picker answers 501', async () => {
+    const error = Object.assign(new Error('unsupported'), { status: 501 });
+    pickFolder.mockRejectedValue(error);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByLabelText(/carpeta de origen/i);
+    await user.click(screen.getByRole('button', { name: /elegir ruta de origen/i }));
+
+    expect(
+      await screen.findByText(
+        'El selector no está disponible en este sistema. Escribí la ruta manualmente.'
+      )
+    ).toBeInTheDocument();
   });
 
   it('does not allow a run when required folders are missing', async () => {
