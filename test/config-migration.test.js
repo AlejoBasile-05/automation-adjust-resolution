@@ -65,6 +65,33 @@ describe('config schema v2 migration (S4)', () => {
       expect(config.heightCm).toBe(0.08);
     });
 
+    test('keeps centimeter geometry written without a schemaVersion', () => {
+      const { config, migrated } = migrateConfig({
+        widthCm: 10.16,
+        heightCm: 7.62,
+        dpi: 100,
+        sourcePath: '/tmp/src',
+      });
+
+      expect(migrated).toBe(true);
+      expect(config).toMatchObject({
+        schemaVersion: 2,
+        widthCm: 10.16,
+        heightCm: 7.62,
+        dpi: 100,
+        sourcePath: '/tmp/src',
+      });
+    });
+
+    test('drops stale pixel keys when a config already carries centimeters', () => {
+      const { config } = migrateConfig({ widthCm: 20, heightCm: 15, width: 800, height: 600 });
+
+      expect(config.widthCm).toBe(20);
+      expect(config.heightCm).toBe(15);
+      expect(config).not.toHaveProperty('width');
+      expect(config).not.toHaveProperty('height');
+    });
+
     test('preserves unrelated legacy settings while migrating', () => {
       const { config } = migrateConfig({
         width: 800,

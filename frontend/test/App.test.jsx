@@ -147,7 +147,7 @@ describe('App', () => {
 
     expect(
       await screen.findByText(
-        'El selector no está disponible en este sistema. Escribí la ruta manualmente.'
+        'El selector no está disponible en este sistema. Escribe la ruta manualmente.'
       )
     ).toBeInTheDocument();
   });

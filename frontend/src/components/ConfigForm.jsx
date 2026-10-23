@@ -39,7 +39,7 @@ const pickButtonClasses =
   'shrink-0 rounded-lg border border-ink-600 bg-ink-900/60 px-3.5 py-2.5 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-mist-200 transition-colors duration-200 hover:border-copper-400/60 hover:text-copper-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:cursor-wait disabled:opacity-50 motion-reduce:transition-none';
 
 const PICKER_UNAVAILABLE =
-  'El selector no está disponible en este sistema. Escribí la ruta manualmente.';
+  'El selector no está disponible en este sistema. Escribe la ruta manualmente.';
 const PICKER_GENERIC_ERROR = 'No se pudo abrir el selector de carpetas.';
 
 function pickerMessage(pickerError) {

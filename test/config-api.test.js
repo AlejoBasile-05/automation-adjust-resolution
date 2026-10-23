@@ -65,4 +65,34 @@ describe('config API (S6)', () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ widthCm: 20, heightCm: 15, dpi: 150, quality: 55 });
   });
+
+  test.each([
+    ['a non-numeric DPI', { dpi: 'abc' }],
+    ['a DPI above the range', { dpi: 1500 }],
+    ['a DPI below the range', { dpi: 0 }],
+    ['a fractional DPI', { dpi: 300.5 }],
+    ['a zero width', { widthCm: 0 }],
+    ['a negative height', { heightCm: -3 }],
+    ['a width above the range', { widthCm: 1001 }],
+  ])('PUT /api/config rejects %s and leaves the file unchanged', async (_label, payload) => {
+    const app = createApp(undefined, undefined, { configPath });
+
+    await request(app).put('/api/config').send({ widthCm: 20, heightCm: 15, dpi: 150 });
+    const before = fs.readFileSync(configPath, 'utf8');
+
+    const res = await request(app).put('/api/config').send(payload);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toEqual(expect.any(String));
+    expect(fs.readFileSync(configPath, 'utf8')).toBe(before);
+  });
+
+  test('PUT /api/config accepts a decimal centimeter geometry', async () => {
+    const app = createApp(undefined, undefined, { configPath });
+
+    const res = await request(app).put('/api/config').send({ widthCm: 10.16, heightCm: 7.62, dpi: 100 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ widthCm: 10.16, heightCm: 7.62, dpi: 100 });
+  });
 });

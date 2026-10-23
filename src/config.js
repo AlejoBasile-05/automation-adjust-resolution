@@ -18,16 +18,48 @@ const DEFAULT_CONFIG = {
   format: 'jpeg',
 };
 
+const MAX_DIMENSION_CM = 1000;
+const MAX_DPI = 1200;
+
+function isNumberInRange(value, min, max) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+}
+
+/**
+ * Reject geometry that would produce nonsensical pixel dimensions.
+ * Returns an error message, or `null` when the config is usable.
+ */
+function validateGeometry(config = {}) {
+  if (!isNumberInRange(config.widthCm, Number.MIN_VALUE, MAX_DIMENSION_CM)) {
+    return `El ancho debe ser un número mayor que 0 y menor o igual a ${MAX_DIMENSION_CM} cm.`;
+  }
+  if (!isNumberInRange(config.heightCm, Number.MIN_VALUE, MAX_DIMENSION_CM)) {
+    return `El alto debe ser un número mayor que 0 y menor o igual a ${MAX_DIMENSION_CM} cm.`;
+  }
+  if (!Number.isInteger(config.dpi) || config.dpi < 1 || config.dpi > MAX_DPI) {
+    return `La resolución debe ser un número entero entre 1 y ${MAX_DPI}.`;
+  }
+  return null;
+}
+
 /**
  * Normalize a persisted config to schema v2.
  *
  * A config without `schemaVersion: 2` is a legacy pixel config and its
  * `width`/`height` are converted at 300 DPI. A legacy value is never
- * reinterpreted as centimeters.
+ * reinterpreted as centimeters. A config that already carries `widthCm`/
+ * `heightCm` but no `schemaVersion` is centimeters written by an older build,
+ * so its geometry is preserved instead of falling back to the pixel defaults.
  */
 function migrateConfig(raw = {}) {
-  if (raw.schemaVersion === 2) {
-    return { config: { ...DEFAULT_CONFIG, ...raw }, migrated: false };
+  const carriesCentimeters = raw.widthCm != null || raw.heightCm != null;
+
+  if (raw.schemaVersion === 2 || (raw.schemaVersion == null && carriesCentimeters)) {
+    const { width, height, ...rest } = raw;
+    return {
+      config: { ...DEFAULT_CONFIG, ...rest, schemaVersion: 2 },
+      migrated: raw.schemaVersion !== 2,
+    };
   }
 
   const { width, height, ...rest } = raw;
@@ -75,4 +107,10 @@ async function saveConfig(configPath, config) {
   await fs.writeFile(configPath, JSON.stringify({ ...config, schemaVersion: 2 }, null, 2));
 }
 
-module.exports = { loadConfig, saveConfig, migrateConfig, DEFAULT_CONFIG };
+module.exports = {
+  loadConfig,
+  saveConfig,
+  migrateConfig,
+  validateGeometry,
+  DEFAULT_CONFIG,
+};

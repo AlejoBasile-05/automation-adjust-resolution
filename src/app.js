@@ -4,7 +4,7 @@ const express = require('express');
 
 const { createPipeline } = require('./pipeline/orchestrator');
 const { discover } = require('./pipeline/discover');
-const { DEFAULT_CONFIG, loadConfig, saveConfig } = require('./config');
+const { DEFAULT_CONFIG, loadConfig, saveConfig, validateGeometry } = require('./config');
 const { pickFolder: defaultPickFolder } = require('./folders/pickFolder');
 const { RunManager } = require('./ws/runManager');
 
@@ -42,6 +42,11 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), optio
     try {
       const current = await readConfig();
       const next = { ...current, ...(req.body ?? {}) };
+      const geometryError = validateGeometry(next);
+      if (geometryError) {
+        res.status(400).json({ error: geometryError });
+        return;
+      }
       res.json(await writeConfig(next));
     } catch (error) {
       res.status(500).json({ error: error.message });

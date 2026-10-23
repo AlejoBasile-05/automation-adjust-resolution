@@ -156,7 +156,7 @@ describe('ConfigForm', () => {
     setup({}, { pickerError: { status: 501 } });
 
     expect(
-      screen.getByText('El selector no está disponible en este sistema. Escribí la ruta manualmente.')
+      screen.getByText('El selector no está disponible en este sistema. Escribe la ruta manualmente.')
     ).toBeInTheDocument();
   });
 
