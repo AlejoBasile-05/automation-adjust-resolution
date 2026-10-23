@@ -1,4 +1,5 @@
 const { randomUUID } = require('crypto');
+const path = require('path');
 
 const express = require('express');
 
@@ -19,6 +20,7 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), optio
 
   const configPath = options.configPath || null;
   const pickFolder = options.pickFolder || defaultPickFolder;
+  const staticDir = options.staticDir || null;
 
   const readConfig = async () => (configPath ? loadConfig(configPath) : config);
   const writeConfig = async (next) => {
@@ -98,6 +100,25 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), optio
     }
     res.json({ runId: req.params.runId, errors });
   });
+
+  // The SPA is served after every API route so it can never shadow one.
+  // Express 5 rejects the bare '*' wildcard, so the fallback is path-less.
+  if (staticDir) {
+    app.use(express.static(staticDir));
+    app.use((req, res, next) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+      if (
+        req.path === '/api' ||
+        req.path.startsWith('/api/') ||
+        req.path.startsWith('/ws')
+      ) {
+        return next();
+      }
+      res.sendFile(path.join(staticDir, 'index.html'), (error) => {
+        if (error) next();
+      });
+    });
+  }
 
   return app;
 }
