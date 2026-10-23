@@ -7,17 +7,20 @@ const { RunManager } = require('./ws/runManager');
 const { attachWebSocketServer } = require('./ws/server');
 
 const CONFIG_PATH = path.join(process.cwd(), 'config.json');
-const PORT = process.env.PORT || 3000;
+const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 
-async function start() {
-  const config = await loadConfig(CONFIG_PATH);
+async function start(options = {}) {
+  const port = options.port ?? DEFAULT_PORT;
+  const configPath = options.configPath ?? CONFIG_PATH;
+
+  const config = await loadConfig(configPath);
   const runManager = new RunManager();
-  const app = createApp(config, runManager, { configPath: CONFIG_PATH });
+  const app = createApp(config, runManager, { configPath });
   const httpServer = http.createServer(app);
   attachWebSocketServer(httpServer, runManager);
 
-  await new Promise((resolve) => httpServer.listen(PORT, resolve));
-  console.log(`Image resizer backend listening on http://localhost:${PORT}`);
+  await new Promise((resolve) => httpServer.listen(port, resolve));
+  console.log(`Image resizer backend listening on http://localhost:${httpServer.address().port}`);
 
   return httpServer;
 }

@@ -86,15 +86,19 @@ Source path, destination path, target width, target height, resize mode, format,
 
 | ID | S# | Route | Description | Status | Commit |
 |----|-----|-------|-------------|--------|--------|
-| T1 | S1,S2,S3 | inline | Backend: Express server + Sharp resize pipeline + filesystem watcher | pending | — |
-| T2 | S4 | inline | Backend: WebSocket endpoint for real-time progress | pending | — |
-| T3 | S5 | inline | Backend: Error handling + per-file error reporting | pending | — |
-| T4 | S6 | inline | Backend: Config persistence (JSON read/write) | pending | — |
-| T5 | S4,S6 | inline | Frontend: React + Vite + Tailwind config panel with live progress | pending | — |
+| T1 | S1,S2,S3 | delegated | Backend: Express server + Sharp resize pipeline + filesystem watcher | done | `5a34435` |
+| T2 | S4 | delegated | Backend: WebSocket endpoint for real-time progress | done | `f545212` |
+| T3 | S5 | delegated | Backend: Error handling + per-file error reporting | done | `5a280f8` |
+| T4 | S6 | inline | Backend: Config persistence API (GET/PUT /api/config) | done | `d39353c` |
+| T5 | S4,S6 | delegated | Frontend: React + Vite + Tailwind config panel with live progress | done | `005afbe` |
 
 ## Log
 
 **L1 (2026-10-18):** User request — "Comienza un proyecto utilizando ODD, el cual conste de una automatizacion que busque imagenes de una determinada carpeta y ajuste su resolucion a la que un usuario ingrese, y luego las guarde en otra carpeta, por ello debe tener un apartado frontend (que deberas hacerlo con el stack que creas mas conveniente), y deberas utilizar las herramientas que creas mas eficientes para este tipo de automatizacion. Como utilizaras ODD, deberas generar el SPEC.md general que tenga un breve resumen de la automatizacion, el objetivo principal y luego contexto general de todo el proyecto."
+
+**L2 (2026-10-23):** Implementación completa. T1 (`5a34435`) pipeline Sharp + Express; T2 (`f545212`) WebSocket con RunManager y heartbeat; T3 (`5a280f8`) errores estructurados con `PipelineError`; T4 (`d39353c`) endpoints `GET/PUT /api/config` (el módulo de config existía pero no estaba expuesto por HTTP — hueco cerrado); T5 (`005afbe`) panel React + Vite + Tailwind.
+
+**Verificación final (2026-10-23):** backend 35/35 tests Jest; frontend 24/24 tests Vitest; `vite build` OK. Smoke test end-to-end contra el servidor real: 2 imágenes procesadas, `broken.png` reportado como `CORRUPT_FILE`, archivo oculto y `.txt` ignorados, eventos WS `started → progress×2 → error → done`, dimensiones de salida correctas (`400×267` en modo `inside`, `400×300`).
 
 **Decisión de stack (2026-10-18):**
 - **Backend:** Node.js + Express + Sharp + Chokidar (fs watcher) + `ws` (WebSocket). Sharp es la librería más eficiente para redimensionamiento en Node.js — usa libvips en C, mucho más rápido que soluciones JS puras.
