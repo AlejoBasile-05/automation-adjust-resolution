@@ -52,9 +52,9 @@ The system shall scan the source folder recursively for image files with extensi
 
 ### S2 — Resolution adjustment
 
-Each image shall be resized to the exact pixel dimensions (width × height) specified by the user. The resize mode `fit: 'inside'` (contain within bounds, preserving aspect ratio) shall be used by default, with an optional `fit: 'fill'` (stretch to exact dimensions) mode selectable in the frontend.
+Each image shall be resized to a target **physical size in centimeters** (width × height) at a configurable **DPI** (dots per inch, default `300`, valid range `1..1200`), so a document can be produced at its real print size regardless of screen resolution. The pixel result is computed as `px = round(cm / 2.54 * dpi)`. The resize mode `fit: 'inside'` (contain within bounds, preserving aspect ratio) shall be used by default, with an optional `fit: 'fill'` (stretch to exact dimensions) mode selectable in the frontend.
 
-**Acceptance criteria:** Every output image matches the target dimensions (inside mode preserves aspect ratio; fill mode matches exactly).
+**Acceptance criteria:** Every output image matches the target dimensions (inside mode preserves aspect ratio; fill mode matches exactly). `10 × 7.5 cm` at `300 DPI` yields `1181 × 886 px`.
 
 ### S3 — Output persistence
 
@@ -76,9 +76,21 @@ Processing errors (unsupported format, read/write permission, corrupt file) shal
 
 ### S6 — Configuration persistence
 
-Source path, destination path, target width, target height, resize mode, format, and quality settings shall be persisted to a JSON config file on disk. The frontend shall load these values on startup.
+Source path, destination path, target width/height in centimeters, DPI, resize mode, format, and quality settings shall be persisted to a JSON config file on disk under `schemaVersion: 2`. The frontend shall load these values on startup. A legacy configuration written in pixels (no `schemaVersion`) shall be migrated to centimeters at `300 DPI` and rewritten; a legacy pixel value shall never be reinterpreted as centimeters.
 
-**Acceptance criteria:** After a page reload, all previously configured settings are restored.
+**Acceptance criteria:** After a page reload, all previously configured settings are restored. A `{"width": 800, "height": 600}` config reads back as `widthCm ≈ 6.77`, `heightCm ≈ 5.08`, `dpi: 300`.
+
+### S7 — Native folder selection
+
+Each folder field shall offer a button that opens the operating system's native folder dialog and fills the input with the chosen absolute path. The dialog shall be launched by the backend through an argument array, never a shell string. Dismissing the dialog shall leave the current value unchanged; a platform without a supported dialog shall report it so the user can type the path manually.
+
+**Acceptance criteria:** Choosing a folder populates the field, cancelling does not alter it, and an unsupported platform shows a manual-entry fallback message.
+
+### S8 — Local-only network binding
+
+The HTTP server shall bind the loopback interface (`127.0.0.1`) instead of every interface, since the tool exposes local filesystem operations and a native dialog launcher.
+
+**Acceptance criteria:** The listening socket reports `127.0.0.1`.
 
 ---
 
@@ -91,6 +103,9 @@ Source path, destination path, target width, target height, resize mode, format,
 | T3 | S5 | delegated | Backend: Error handling + per-file error reporting | done | `5a280f8` |
 | T4 | S6 | inline | Backend: Config persistence API (GET/PUT /api/config) | done | `d39353c` |
 | T5 | S4,S6 | delegated | Frontend: React + Vite + Tailwind config panel with live progress | done | `005afbe` |
+| T6 | S2,S6 | delegated | Centimeters + configurable DPI with schema v2 migration | done | `9a40628` |
+| T7 | S7,S8 | delegated | Native folder picker and loopback-only binding | done | `ae4c9b2` |
+| T8 | S2,S6,S7 | inline | Verification follow-ups: version-less cm configs, geometry validation on PUT | done | `e36ba59` |
 
 ## Log
 
@@ -107,3 +122,13 @@ Source path, destination path, target width, target height, resize mode, format,
 - **Frontend:** React + Vite + Tailwind CSS. Vite por su velocidad de desarrollo, Tailwind por UI rápida sin overhead de CSS manual, React por su ecosistema maduro para paneles de control.
 - **Tests:** Jest + Supertest (backend), Vitest + Testing Library (frontend).
 - **Sin base de datos:** la configuración persiste en JSON en disco; no hay estado relacional.
+
+**L4 (2026-10-23):** User request — "Haz un plan detallado para que la Geometria se ponga en cm, no en pixeles, luego en el apartado de carpetas, debe haber un boton para poder seleccionar la carpeta."
+
+**Decisión de DPI (2026-10-23):** la resolución es un campo configurable del formulario, con default `300` y rango `1..1200`. Se descartó fijarla en código porque el tamaño físico de destino varía por trabajo (pantalla 96, impresión 300, gran formato 150).
+
+**Por qué la conversión vive en el borde (2026-10-23):** `src/pipeline/resize.js` queda como función pura de píxeles y `orchestrator.js` convierte cm→px antes de llamarla. Así el pipeline conserva sus tests en píxeles y la aritmética nueva se prueba una sola vez, aislada, en `src/units/cm.js` (con un espejo ESM en el frontend cuyos tests fijan los mismos valores de referencia para que no deriven).
+
+**Migración de config (2026-10-23):** renombrar `width`/`height` a `widthCm`/`heightCm` fue deliberado. Sin el renombre, una config legacy `{"width": 800}` se habría leído como 800 cm (~9449 px). Con `schemaVersion: 2` la ambigüedad desaparece, y un archivo sin versión se migra a cm usando 300 DPI y se reescribe en disco. Una config que ya trae `widthCm`/`heightCm` pero sin `schemaVersion` conserva sus centímetros en lugar de caer a los defaults.
+
+**Verificación final T6-T8 (2026-10-23):** backend 82/82 tests Jest (9 suites); frontend 44/44 tests Vitest (7 archivos); `vite build` OK. Verificador independiente sobre el rango `9d5e0fa..ae4c9b2`: S1-S8 PASS, sin blockers, con tres advisories corregidas en `e36ba59` (config en cm sin `schemaVersion`, validación de geometría en `PUT /api/config` con 400 y archivo intacto, y voseo reemplazado por español neutro). Sondas confirmadas: `cmToPx(10,300)=1181`, migración legacy `800×600 px → 6.77×5.08 cm @ 300 dpi`, salida real `400×267` (inside) y `400×300` (fill) con `10.16×7.62 cm @ 100 dpi`, `initialPath` con `;`, `$()` y backticks pasado como elemento inerte de un array a `execFile`, y bind observado en `127.0.0.1`.
