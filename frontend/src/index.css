@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply min-h-screen bg-ink-950 font-body text-mist-100 antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at 12% -10%, rgba(232, 169, 79, 0.09), transparent 60%),
+      radial-gradient(45rem 35rem at 92% 8%, rgba(95, 211, 161, 0.05), transparent 65%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-copper-400/30 text-mist-100;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-copper-400/60 ring-offset-2 ring-offset-ink-950;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
