@@ -11,18 +11,18 @@ export default function ErrorList({ errors }) {
           id="errors-heading"
           className="font-mono text-[0.7rem] uppercase tracking-[0.28em] text-mist-400"
         >
-          Errors ({items.length})
+          Errores ({items.length})
         </h2>
         {items.length > 0 && (
           <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-signal-bad">
-            Needs review
+            Requiere revisión
           </span>
         )}
       </header>
 
       {items.length === 0 ? (
         <p className="mt-5 text-sm text-mist-300">
-          No errors reported. Every discovered file made it through.
+          No se reportaron errores. Todos los archivos detectados se procesaron.
         </p>
       ) : (
         <ul className="mt-5 divide-y divide-ink-600/70">
@@ -36,13 +36,13 @@ export default function ErrorList({ errors }) {
               </span>
               <div className="min-w-0">
                 <p className="truncate font-mono text-xs text-mist-200" title={error.file}>
-                  {error.file ?? 'unknown file'}
+                  {error.file ?? 'archivo desconocido'}
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-mist-300">
-                  {error.message ?? 'No message provided.'}
+                  {error.message ?? 'Sin mensaje.'}
                 </p>
                 <p className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-mist-400">
-                  stage · {error.stage ?? 'unknown'}
+                  etapa · {error.stage ?? 'desconocida'}
                 </p>
               </div>
             </li>

@@ -24,14 +24,14 @@ describe('ErrorList', () => {
   it('reports a calm empty state when nothing failed', () => {
     render(<ErrorList errors={[]} />);
 
-    expect(screen.getByText(/no errors reported/i)).toBeInTheDocument();
+    expect(screen.getByText(/no se reportaron errores/i)).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
   it('renders one entry per failed file with its code and message', () => {
     render(<ErrorList errors={errors} />);
 
-    expect(screen.getByText(/errors \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/errores \(2\)/i)).toBeInTheDocument();
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent('CORRUPT_FILE');

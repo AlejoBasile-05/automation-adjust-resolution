@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { hasErrors, normalizeConfig, validateConfig } from '../services/validation.js';
 
 const FIT_OPTIONS = [
-  { value: 'inside', label: 'Inside — preserve aspect ratio' },
-  { value: 'fill', label: 'Fill — stretch to exact size' },
+  { value: 'inside', label: 'Inside — conserva la proporción' },
+  { value: 'fill', label: 'Fill — estira al tamaño exacto' },
 ];
 
 const FORMAT_OPTIONS = ['jpeg', 'png', 'webp', 'tiff', 'gif'];
@@ -67,16 +67,16 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
     <form
       onSubmit={handleSubmit}
       noValidate
-      aria-label="Batch configuration"
+      aria-label="Configuración del lote"
       className="rounded-2xl border border-ink-600/70 bg-ink-800/60 p-6 shadow-panel backdrop-blur-sm sm:p-8"
     >
       <div className="grid gap-8">
-        <Section index="01" title="Folders">
+        <Section index="01" title="Carpetas">
           <div className="sm:col-span-2">
             <Field
               id="sourcePath"
-              label="Source folder"
-              hint="scanned recursively"
+              label="Carpeta de origen"
+              hint="se escanea de forma recursiva"
               error={errorFor('sourcePath')}
             >
               <input
@@ -98,8 +98,8 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
           <div className="sm:col-span-2">
             <Field
               id="destPath"
-              label="Destination folder"
-              hint="created if missing"
+              label="Carpeta de destino"
+              hint="se crea si no existe"
               error={errorFor('destPath')}
             >
               <input
@@ -119,8 +119,8 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
           </div>
         </Section>
 
-        <Section index="02" title="Geometry">
-          <Field id="width" label="Width" hint="px" error={errorFor('width')}>
+        <Section index="02" title="Geometría">
+          <Field id="width" label="Ancho" hint="px" error={errorFor('width')}>
             <input
               id="width"
               type="number"
@@ -136,7 +136,7 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
             />
           </Field>
 
-          <Field id="height" label="Height" hint="px" error={errorFor('height')}>
+          <Field id="height" label="Alto" hint="px" error={errorFor('height')}>
             <input
               id="height"
               type="number"
@@ -153,7 +153,7 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
           </Field>
 
           <div className="sm:col-span-2">
-            <Field id="fit" label="Resize mode">
+            <Field id="fit" label="Modo de redimensionado">
               <select
                 id="fit"
                 value={values.fit}
@@ -170,10 +170,10 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
           </div>
         </Section>
 
-        <Section index="03" title="Encoding">
+        <Section index="03" title="Codificación">
           <Field
             id="quality"
-            label="Quality"
+            label="Calidad"
             hint="1 – 100"
             error={errorFor('quality')}
           >
@@ -193,7 +193,7 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
             />
           </Field>
 
-          <Field id="format" label="Format">
+          <Field id="format" label="Formato">
             <select
               id="format"
               value={values.format}
@@ -211,14 +211,14 @@ export default function ConfigForm({ values, onChange, onSave, disabled = false 
 
         <div className="flex flex-col gap-3 border-t border-ink-600/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xs text-xs leading-relaxed text-mist-400">
-            Settings are persisted on the server and restored on reload.
+            La configuración se guarda en el servidor y se restaura al recargar.
           </p>
           <button
             type="submit"
             disabled={disabled}
             className="inline-flex items-center justify-center rounded-lg bg-copper-400 px-5 py-2.5 font-mono text-xs font-medium uppercase tracking-[0.2em] text-ink-950 transition-colors duration-200 hover:bg-copper-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-300 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
           >
-            Save settings
+            Guardar configuración
           </button>
         </div>
       </div>

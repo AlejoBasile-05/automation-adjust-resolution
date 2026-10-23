@@ -1,9 +1,9 @@
 const STATUS_COPY = {
-  idle: 'Idle',
-  running: 'Processing',
-  done: 'Complete',
-  failed: 'Failed',
-  'connection-lost': 'Interrupted',
+  idle: 'Inactivo',
+  running: 'Procesando',
+  done: 'Completado',
+  failed: 'Fallido',
+  'connection-lost': 'Interrumpido',
 };
 
 function percentFor(status, processed, total) {
@@ -31,17 +31,17 @@ export default function ProgressPanel({ status, processed, total, currentFile })
           id="progress-heading"
           className="font-mono text-[0.7rem] uppercase tracking-[0.28em] text-mist-400"
         >
-          Batch progress
+          Progreso del lote
         </h2>
         <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-mist-300">
-          {STATUS_COPY[status] ?? 'Idle'}
+          {STATUS_COPY[status] ?? 'Inactivo'}
         </span>
       </header>
 
       {isIdle ? (
         <p className="mt-6 max-w-sm text-sm leading-relaxed text-mist-300">
-          No batch running yet. Confirm your folders and resolution, then start a run to
-          watch each file move through the atelier.
+          Aún no hay ningún lote en ejecución. Confirma las carpetas y la resolución, y luego
+          inicia un proceso para ver cada archivo avanzar.
         </p>
       ) : (
         <>
@@ -59,7 +59,7 @@ export default function ProgressPanel({ status, processed, total, currentFile })
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={percent}
-            aria-label="Batch completion"
+            aria-label="Finalización del lote"
             className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-ink-600"
           >
             <div
@@ -71,7 +71,7 @@ export default function ProgressPanel({ status, processed, total, currentFile })
           <div className="mt-5 min-h-10">
             {currentFile ? (
               <p className="truncate font-mono text-xs text-mist-400" title={currentFile}>
-                <span className="text-mist-300">now · </span>
+                <span className="text-mist-300">ahora · </span>
                 {currentFile}
               </p>
             ) : (
@@ -80,17 +80,17 @@ export default function ProgressPanel({ status, processed, total, currentFile })
           </div>
 
           {status === 'done' && (
-            <p className="text-sm text-signal-ok">Batch complete.</p>
+            <p className="text-sm text-signal-ok">Lote completado.</p>
           )}
           {status === 'failed' && (
             <p role="alert" className="text-sm text-signal-bad">
-              The run could not be started. Progress above is the last known state.
+              No se pudo iniciar el proceso. El progreso mostrado es el último estado conocido.
             </p>
           )}
           {status === 'connection-lost' && (
             <p role="alert" className="text-sm text-signal-warn">
-              Connection lost. Progress shown is the last update received; the batch may
-              still be finishing on the server.
+              Conexión perdida. El progreso mostrado es la última actualización recibida; el
+              lote puede seguir terminando en el servidor.
             </p>
           )}
         </>

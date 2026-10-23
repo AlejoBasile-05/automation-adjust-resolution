@@ -56,8 +56,8 @@ describe('App', () => {
   it('loads the persisted configuration on mount (S6)', async () => {
     render(<App />);
 
-    expect(await screen.findByLabelText(/source folder/i)).toHaveValue('/photos/in');
-    expect(screen.getByLabelText(/^width/i)).toHaveValue(1920);
+    expect(await screen.findByLabelText(/carpeta de origen/i)).toHaveValue('/photos/in');
+    expect(screen.getByLabelText(/^ancho/i)).toHaveValue(1920);
     expect(getConfig).toHaveBeenCalledTimes(1);
   });
 
@@ -65,17 +65,17 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const source = await screen.findByLabelText(/source folder/i);
+    const source = await screen.findByLabelText(/carpeta de origen/i);
     await user.clear(source);
     await user.type(source, '/photos/new-in');
-    await user.click(screen.getByRole('button', { name: /save settings/i }));
+    await user.click(screen.getByRole('button', { name: /guardar configuración/i }));
 
     await waitFor(() =>
       expect(saveConfig).toHaveBeenCalledWith(
         expect.objectContaining({ sourcePath: '/photos/new-in', width: 1920 }),
       ),
     );
-    expect(await screen.findByRole('status')).toHaveTextContent(/settings saved/i);
+    expect(await screen.findByRole('status')).toHaveTextContent(/configuración guardada/i);
   });
 
   it('starts a run with the current configuration (S4)', async () => {
@@ -84,8 +84,8 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await screen.findByLabelText(/source folder/i);
-    await user.click(screen.getByRole('button', { name: /start run/i }));
+    await screen.findByLabelText(/carpeta de origen/i);
+    await user.click(screen.getByRole('button', { name: /iniciar proceso/i }));
 
     await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
     expect(start).toHaveBeenCalledWith(
@@ -102,7 +102,7 @@ describe('App', () => {
     getConfig.mockResolvedValue({ ...stored, sourcePath: '' });
     render(<App />);
 
-    await screen.findByLabelText(/source folder/i);
-    expect(screen.getByRole('button', { name: /start run/i })).toBeDisabled();
+    await screen.findByLabelText(/carpeta de origen/i);
+    expect(screen.getByRole('button', { name: /iniciar proceso/i })).toBeDisabled();
   });
 });

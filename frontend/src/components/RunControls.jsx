@@ -18,7 +18,7 @@ export default function RunControls({ status, canStart, onStart, onReset }) {
             className="h-2 w-2 rounded-full bg-copper-400 animate-breathe motion-reduce:animate-none"
           />
         )}
-        {isRunning ? 'Running' : 'Start run'}
+        {isRunning ? 'Procesando' : 'Iniciar proceso'}
       </button>
 
       {isTerminal && (
@@ -27,7 +27,7 @@ export default function RunControls({ status, canStart, onStart, onReset }) {
           onClick={onReset}
           className="inline-flex items-center justify-center rounded-lg border border-ink-600 px-5 py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-mist-200 transition-colors duration-200 hover:border-mist-400 hover:text-mist-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-400 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 motion-reduce:transition-none"
         >
-          Clear results
+          Limpiar resultados
         </button>
       )}
     </div>

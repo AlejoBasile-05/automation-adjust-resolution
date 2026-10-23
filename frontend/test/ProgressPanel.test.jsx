@@ -7,7 +7,7 @@ describe('ProgressPanel', () => {
   it('shows an idle state before any run starts', () => {
     render(<ProgressPanel status="idle" processed={0} total={0} currentFile="" />);
 
-    expect(screen.getByText(/no batch running yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/aún no hay ningún lote en ejecución/i)).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
@@ -32,7 +32,7 @@ describe('ProgressPanel', () => {
 
     expect(screen.getByText('100%')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100');
-    expect(screen.getByText(/batch complete/i)).toBeInTheDocument();
+    expect(screen.getByText(/lote completado/i)).toBeInTheDocument();
     expect(screen.getByText('9 / 10')).toBeInTheDocument();
   });
 
@@ -46,7 +46,7 @@ describe('ProgressPanel', () => {
       />,
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/connection lost/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/conexión perdida/i);
     expect(screen.getByText('4 / 10')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40');
   });

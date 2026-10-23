@@ -1,7 +1,7 @@
 const POSITIVE_INTEGER = /^\d+$/;
 const POSITIVE_INTEGER_MESSAGES = {
-  width: 'Width must be a positive whole number.',
-  height: 'Height must be a positive whole number.',
+  width: 'El ancho debe ser un número entero positivo.',
+  height: 'El alto debe ser un número entero positivo.',
 };
 
 function isBlank(value) {
@@ -23,12 +23,12 @@ function isQuality(value) {
 export function validateConfig(values) {
   const errors = {};
 
-  if (isBlank(values.sourcePath)) errors.sourcePath = 'Source folder is required.';
-  if (isBlank(values.destPath)) errors.destPath = 'Destination folder is required.';
+  if (isBlank(values.sourcePath)) errors.sourcePath = 'La carpeta de origen es obligatoria.';
+  if (isBlank(values.destPath)) errors.destPath = 'La carpeta de destino es obligatoria.';
   if (!isPositiveInteger(values.width)) errors.width = POSITIVE_INTEGER_MESSAGES.width;
   if (!isPositiveInteger(values.height)) errors.height = POSITIVE_INTEGER_MESSAGES.height;
   if (!isQuality(values.quality)) {
-    errors.quality = 'Quality must be a whole number between 1 and 100.';
+    errors.quality = 'La calidad debe ser un número entero entre 1 y 100.';
   }
 
   return errors;

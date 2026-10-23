@@ -41,7 +41,7 @@ export default function App() {
       })
       .catch((error) => {
         if (active) {
-          setNotice({ tone: 'bad', text: `Could not load settings: ${error.message}` });
+          setNotice({ tone: 'bad', text: `No se pudo cargar la configuración: ${error.message}` });
         }
       })
       .finally(() => {
@@ -64,9 +64,9 @@ export default function App() {
     try {
       const saved = await saveConfig(next);
       setValues((current) => ({ ...current, ...(saved ?? next) }));
-      setNotice({ tone: 'ok', text: 'Settings saved — persisted on the server.' });
+      setNotice({ tone: 'ok', text: 'Configuración guardada — persistida en el servidor.' });
     } catch (error) {
-      setNotice({ tone: 'bad', text: `Could not save settings: ${error.message}` });
+      setNotice({ tone: 'bad', text: `No se pudo guardar la configuración: ${error.message}` });
     } finally {
       setSaving(false);
     }
@@ -93,13 +93,13 @@ export default function App() {
             <div>
               <p className="font-display text-lg leading-none text-mist-100">Lumen</p>
               <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.24em] text-mist-400">
-                Image resolution atelier
+                Atelier de resolución de imágenes
               </p>
             </div>
           </div>
 
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-mist-400">
-            {loading ? 'Loading settings' : `${values.width}×${values.height} · ${values.format}`}
+            {loading ? 'Cargando configuración' : `${values.width}×${values.height} · ${values.format}`}
           </p>
         </div>
       </header>
@@ -107,17 +107,17 @@ export default function App() {
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <section className="animate-rise motion-reduce:animate-none">
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-copper-400">
-            Batch resizing
+            Redimensionado por lotes
           </p>
           <h1 className="mt-4 max-w-2xl font-display text-4xl leading-[1.05] text-mist-100 sm:text-6xl">
-            Point at a folder.
+            Apunta a una carpeta.
             <br />
-            Get a clean, consistent set.
+            Obtén un conjunto uniforme.
           </h1>
           <p className="mt-5 max-w-xl text-sm leading-relaxed text-mist-300 sm:text-base">
-            Every supported image in the source folder is resized to your target resolution and
-            written to the destination folder. Watch each file move through in real time, and
-            keep going even when one file refuses.
+            Cada imagen compatible de la carpeta de origen se redimensiona a la resolución
+            indicada y se guarda en la carpeta de destino. Observa cada archivo en tiempo real y
+            el lote continúa incluso si un archivo falla.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -129,7 +129,7 @@ export default function App() {
             />
             {loading && (
               <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-mist-400">
-                Syncing…
+                Sincronizando…
               </span>
             )}
           </div>
@@ -176,7 +176,7 @@ export default function App() {
 
       <footer className="mx-auto max-w-6xl px-5 pb-10 sm:px-8">
         <p className="border-t border-ink-600/60 pt-6 font-mono text-[0.6rem] uppercase tracking-[0.22em] text-mist-400">
-          Sharp · libvips pipeline · local only
+          Sharp · pipeline libvips · solo local
         </p>
       </footer>
     </div>
