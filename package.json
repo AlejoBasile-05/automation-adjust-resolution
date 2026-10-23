@@ -1,5 +1,6 @@
 {
   "name": "gustavo-automatizacion-images",
+  "productName": "Ajuste de Resolucion",
   "version": "1.0.0",
   "description": "Automated image resolution adjustment: scan a source folder, resize images with Sharp, and write results to a destination folder.",
   "main": "desktop/main.js",
@@ -11,7 +12,11 @@
     "test": "jest",
     "build:frontend": "npm --prefix frontend run build",
     "desktop": "npm run build:frontend && electron .",
-    "dist": "npm run build:frontend && electron-builder"
+    "dist": "npm run build:frontend && electron-builder",
+    "dist:linux": "npm run build:frontend && electron-builder --linux",
+    "dist:win": "npm run build:frontend && electron-builder --win",
+    "dist:mac": "npm run build:frontend && electron-builder --mac",
+    "dist:dir": "npm run build:frontend && electron-builder --linux dir"
   },
   "repository": {
     "type": "git",
@@ -35,5 +40,6 @@
     "electron-builder": "^26.15.3",
     "jest": "^30.5.2",
     "supertest": "^7.3.1"
-  }
+  },
+  "desktopName": "ajuste-de-resolucion.desktop"
 }

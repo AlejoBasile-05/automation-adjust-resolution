@@ -1,0 +1,48 @@
+appId: com.alejoba.ajuste-resolucion
+productName: Ajuste de Resolucion
+
+directories:
+  output: release
+
+asar: true
+
+# sharp and its libvips binaries are native: .node addons and .so files cannot
+# be loaded from inside the asar archive, so they must live on disk.
+asarUnpack:
+  - '**/node_modules/sharp/**'
+  - '**/node_modules/@img/**'
+
+# sharp 0.35 is N-API based and ships prebuilt binaries; rebuilding against
+# Electron's ABI is unnecessary and would require a native toolchain.
+npmRebuild: false
+
+files:
+  - '**/*'
+  - '!**/test/**'
+  - '!**/*.test.js'
+  - '!odd/**'
+  - '!release/**'
+  - '!coverage/**'
+  - '!frontend/src/**'
+  - '!frontend/test/**'
+  - '!frontend/node_modules/**'
+  - '!desktop/**/*.md'
+
+linux:
+  target:
+    - AppImage
+  category: Graphics
+  executableName: ajuste-de-resolucion
+  syncDesktopName: true
+  artifactName: ${productName}-${version}-${arch}.AppImage
+
+win:
+  target:
+    - portable
+  artifactName: ${productName}-${version}-${arch}.exe
+
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.graphics-design
