@@ -2,6 +2,19 @@ const path = require('path');
 
 const { app, BrowserWindow, Menu, dialog } = require('electron');
 
+// Disable GPU/hardware acceleration for Linux headless/CI environments.
+// Must be called before app.whenReady() or BrowserWindow creation.
+if (process.platform === 'linux') {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('ozone-platform', 'x11');
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+  app.commandLine.appendSwitch('disable-dev-shm-usage');
+  app.commandLine.appendSwitch('no-sandbox');
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+}
+
 const { start, resolveConfigPath } = require('../src/server');
 const { createElectronPicker } = require('./pickFolder');
 
@@ -40,7 +53,12 @@ if (!app.requestSingleInstanceLock()) {
 
 async function bootstrap() {
   const configPath = resolveConfigPath(app.getPath('userData'));
-  const staticDir = path.join(__dirname, '..', 'frontend', 'dist');
+  // When packaged, extraResources are at process.resourcesPath
+  // In development, they're at __dirname/../frontend/dist
+  const isPackaged = app.isPackaged;
+  const staticDir = isPackaged
+    ? path.join(process.resourcesPath, 'frontend', 'dist')
+    : path.join(__dirname, '..', 'frontend', 'dist');
   const pickFolder = createElectronPicker({
     // Bound through an arrow: a detached native method is not guaranteed to
     // keep its receiver across Electron versions.

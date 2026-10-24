@@ -26,10 +26,12 @@ files:
   - '!odd/**'
   - '!release/**'
   - '!coverage/**'
-  - '!frontend/src/**'
-  - '!frontend/test/**'
-  - '!frontend/node_modules/**'
+  - '!frontend/**'
   - '!desktop/**/*.md'
+
+extraResources:
+  - from: frontend/dist
+    to: frontend/dist
 
 linux:
   target:
