@@ -1,0 +1,110 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build frontend
+      run: npm run build:frontend
+
+    - name: Build Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run dist:linux
+
+    - name: Build Windows
+      if: matrix.os == 'windows-latest'
+      run: npm run dist:win
+
+    - name: Build macOS
+      if: matrix.os == 'macos-latest'
+      run: npm run dist:mac
+
+    - name: Build dir
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run dist:dir
+
+    - name: Upload Linux artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-artifacts
+        path: |
+          release/*.AppImage
+          dist/*.AppImage
+
+    - name: Upload Windows artifacts
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-artifacts
+        path: |
+          release/*.exe
+          dist/*.exe
+
+    - name: Upload macOS artifacts
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-artifacts
+        path: |
+          release/*.dmg
+          release/*.zip
+          dist/*.dmg
+          dist/*.zip
+
+    - name: Upload dir artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dir-artifacts
+        path: |
+          dist/*.tar.gz
+          release/*.tar.gz
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/linux-artifacts/*.AppImage
+          artifacts/windows-artifacts/*.exe
+          artifacts/macos-artifacts/*.dmg
+          artifacts/macos-artifacts/*.zip
+          artifacts/dir-artifacts/*.tar.gz
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false

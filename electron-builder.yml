@@ -31,10 +31,12 @@ files:
 linux:
   target:
     - AppImage
+    - dir
+    - tar.gz
   category: Graphics
   executableName: ajuste-de-resolucion
   syncDesktopName: true
-  artifactName: ${productName}-${version}-${arch}.AppImage
+  artifactName: ${productName}-${version}-${arch}.${ext}
 
 win:
   target:
