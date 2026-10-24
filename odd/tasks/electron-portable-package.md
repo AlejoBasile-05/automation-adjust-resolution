@@ -69,10 +69,12 @@ All existing behavior shall keep passing.
 
 | ID | S# | Route | Description | Status | Commit |
 |----|-----|-------|-------------|--------|--------|
-| D1 | S1,S2,S3 | delegated | `staticDir` in `createApp`, SPA fallback, option forwarding in `start` | pending | — |
-| D2 | S4,S5,S6 | delegated | Electron main process, native dialog adapter, lifecycle | pending | — |
-| D3 | S7 | delegated | electron-builder config, asarUnpack for sharp, portable targets | pending | — |
-| D4 | S8,S9 | inline | Build the AppImage and verify the packaged app end to end | pending | — |
+| D1 | S1,S2,S3 | delegated | `staticDir` in `createApp`, SPA fallback, option forwarding in `start` | ✅ done | `7108b70` |
+| D2 | S4,S5,S6 | delegated | Electron main process, native dialog adapter, lifecycle | ✅ done | `afcfec7` |
+| D3 | S7 | delegated | electron-builder config, asarUnpack for sharp, portable targets | ✅ done | `016bf49` |
+| D4 | S8,S9 | inline | Build the AppImage and verify the packaged app end to end | ✅ done | — |
+
+---
 
 ## Log
 
@@ -87,3 +89,18 @@ All existing behavior shall keep passing.
 **Express 5 gotcha:** path-to-regexp v8 rejects the bare `'*'` wildcard, so the SPA fallback must be a path-less middleware, not `app.get('*', ...)`.
 
 **Delivery forecast:** ~450-600 authored lines. High-risk items 5 (packaging toolchain) and 3 (the `createApp`/`start` contract consumed by tests), so the packaging commit is reviewed alone and an independent verifier runs before delivery.
+
+**L3 (2026-10-24):** All four work units completed and verified:
+- D1 (`7108b70`): `createApp` accepts `staticDir`, path-less SPA fallback after `/api` routes, `start()` forwards `staticDir` and `pickFolder`. Tests: `static-serving.test.js`, `config-path.test.js`. Backend 93/93.
+- D2 (`afcfec7`): `desktop/main.js` with single-instance lock, `port: 0`, config in userData, staticDir to asar, window `show: false` + `ready-to-show`, `nodeIntegration: false`/`contextIsolation: true`/`sandbox: true`, `Menu.setApplicationMenu(null)`, close server on `before-quit`. `desktop/pickFolder.js` with `createElectronPicker` wrapping `dialog.showOpenDialog` (arrow-bound, conditional call shape). Tests: `electron-picker.test.js` (8). Backend 101/101, frontend 44/44.
+- D3 (`016bf49`): `electron-builder.yml` with `appId: com.alejoba.ajuste-resolucion`, `productName: Ajuste de Resolucion`, `executableName: ajuste-de-resolucion`, `syncDesktopName: true`, `asar: true`, `asarUnpack: ['**/node_modules/sharp/**', '**/node_modules/@img/**']`, `npmRebuild: false`, targets AppImage/portable/dmg+zip. `.gitignore` + `release/`. `npm run dist:dir` exit 0, `release/linux-unpacked/` with executable and `resources/app.asar`, `app.asar.unpacked/node_modules/{sharp,@img}` with `.node` and `.so` files.
+- D4 (inline): Built AppImage `Ajuste de Resolucion-1.0.0-x86_64.AppImage` (137M). End-to-end verified on port 39637/36857: `GET /api/config` → schema v2 JSON; `GET /` → 200 text/html SPA from asar; `POST /api/process` with 2 fixtures (1200×800, 900×900) at 10cm×7.5cm@300dpi → `{"total":2,"processed":2,"errors":[]}`; outputs 1181×787 and 886×886 JPEG; userData created at `~/.config/Ajuste de Resolucion/`; no `config.json` next to executable. Launched with `PATH=/usr/bin:/bin` — works without system Node.
+
+**Known issues (non-blocking):**
+- Linux AppImage requires `libfuse2` to run directly (`dlopen(): error loading libfuse.so.2`). Workaround: `--appimage-extract-and-run` or install `libfuse2`. The `dir`/`tar.gz` target is more portable for Linux.
+- Wayland/Vulkan error `'--ozone-platform=wayland' is not compatible with Vulkan` appears in stderr but app runs and stays alive (9 processes) with default flags. Not adding `app.disableHardwareAcceleration()`.
+- `[SharpElectronLinux] Warning: Binaries provided by Electron for use on Linux may be incompatible with sharp` — advisory only; resize works correctly.
+- `release/linux-unpacked` is 313M including `@img` binaries for other platforms (linuxmusl ~19M each). Pruning by platform would save ~40MB but adds config complexity.
+- One Vitest frontend test flaked once during D2 commit; 8 subsequent runs green — not reproducible.
+
+**Cross-compilation:** Windows/macOS targets configured in `electron-builder.yml` but not built from Linux (outside scope).

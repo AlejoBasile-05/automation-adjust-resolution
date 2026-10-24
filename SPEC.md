@@ -1,6 +1,6 @@
 # Image Resizer Automation
 
-**Branch:** main (feature branch pending)
+**Branch:** main
 **Delivery strategy:** ask-on-risk
 **Test runner:** Jest + Supertest (backend), Vitest (frontend)
 
@@ -94,6 +94,20 @@ The HTTP server shall bind the loopback interface (`127.0.0.1`) instead of every
 
 ---
 
+### S9 — Portable desktop packaging (Electron)
+
+The application shall be packaged as a portable desktop app using Electron and electron-builder. The packaged app must:
+- Run with a single click, without requiring Node.js installed on the target system.
+- Use the OS native folder dialog (Electron's `dialog.showOpenDialog`) instead of external binaries (`zenity`, `osascript`, PowerShell).
+- Store configuration in `app.getPath('userData')` (not next to the executable).
+- Serve the built frontend SPA from the asar archive.
+- Include `sharp` and `@img/**` native binaries unpacked outside the asar (libvips loads from disk).
+- Build targets: `AppImage` (Linux), `portable` (Windows), `dmg` + `zip` (macOS).
+
+**Acceptance criteria:** The Linux AppImage launches from an arbitrary directory and completes a resize batch. The app runs without `node` on `PATH`.
+
+---
+
 ## Tasks
 
 | ID | S# | Route | Description | Status | Commit |
@@ -106,6 +120,12 @@ The HTTP server shall bind the loopback interface (`127.0.0.1`) instead of every
 | T6 | S2,S6 | delegated | Centimeters + configurable DPI with schema v2 migration | done | `9a40628` |
 | T7 | S7,S8 | delegated | Native folder picker and loopback-only binding | done | `ae4c9b2` |
 | T8 | S2,S6,S7 | inline | Verification follow-ups: version-less cm configs, geometry validation on PUT | done | `e36ba59` |
+| D1 | S1,S2,S3 | delegated | Desktop: `staticDir` in `createApp`, SPA fallback, option forwarding in `start` | done | `7108b70` |
+| D2 | S4,S5,S6 | delegated | Desktop: Electron main process, native dialog adapter, lifecycle | done | `afcfec7` |
+| D3 | S7,S9 | delegated | Desktop: electron-builder config, asarUnpack for sharp, portable targets | done | `016bf49` |
+| D4 | S8,S9 | inline | Desktop: Build AppImage and verify packaged app end-to-end | done | — |
+
+---
 
 ## Log
 
@@ -115,7 +135,7 @@ The HTTP server shall bind the loopback interface (`127.0.0.1`) instead of every
 
 **L2 (2026-10-23):** Implementación completa. T1 (`5a34435`) pipeline Sharp + Express; T2 (`f545212`) WebSocket con RunManager y heartbeat; T3 (`5a280f8`) errores estructurados con `PipelineError`; T4 (`d39353c`) endpoints `GET/PUT /api/config` (el módulo de config existía pero no estaba expuesto por HTTP — hueco cerrado); T5 (`005afbe`) panel React + Vite + Tailwind.
 
-**Verificación final (2026-10-23):** backend 35/35 tests Jest; frontend 24/24 tests Vitest; `vite build` OK. Smoke test end-to-end contra el servidor real: 2 imágenes procesadas, `broken.png` reportado como `CORRUPT_FILE`, archivo oculto y `.txt` ignorados, eventos WS `started → progress×2 → error → done`, dimensiones de salida correctas (`400×267` en modo `inside`, `400×300`).
+**Verificación final (2026-10-23):** backend 35/35 tests Jest; frontend 24/24 tests Vitest; `vite build` OK. Smoke test end-to-end contra el servidor real: 2 imágenes procesadas, `broken.png` reportado como `CORRUPT_FILE`, archivo oculto y `.txt` ignorados, eventos WS `started → progress×2 → error → done`, dimensiones de salida correctas (`400×267` en modo `inside`, `400×300` en modo `fill` con `10.16×7.62 cm @ 100 dpi`).
 
 **Decisión de stack (2026-10-18):**
 - **Backend:** Node.js + Express + Sharp + Chokidar (fs watcher) + `ws` (WebSocket). Sharp es la librería más eficiente para redimensionamiento en Node.js — usa libvips en C, mucho más rápido que soluciones JS puras.
@@ -132,3 +152,13 @@ The HTTP server shall bind the loopback interface (`127.0.0.1`) instead of every
 **Migración de config (2026-10-23):** renombrar `width`/`height` a `widthCm`/`heightCm` fue deliberado. Sin el renombre, una config legacy `{"width": 800}` se habría leído como 800 cm (~9449 px). Con `schemaVersion: 2` la ambigüedad desaparece, y un archivo sin versión se migra a cm usando 300 DPI y se reescribe en disco. Una config que ya trae `widthCm`/`heightCm` pero sin `schemaVersion` conserva sus centímetros en lugar de caer a los defaults.
 
 **Verificación final T6-T8 (2026-10-23):** backend 82/82 tests Jest (9 suites); frontend 44/44 tests Vitest (7 archivos); `vite build` OK. Verificador independiente sobre el rango `9d5e0fa..ae4c9b2`: S1-S8 PASS, sin blockers, con tres advisories corregidas en `e36ba59` (config en cm sin `schemaVersion`, validación de geometría en `PUT /api/config` con 400 y archivo intacto, y voseo reemplazado por español neutro). Sondas confirmadas: `cmToPx(10,300)=1181`, migración legacy `800×600 px → 6.77×5.08 cm @ 300 dpi`, salida real `400×267` (inside) y `400×300` (fill) con `10.16×7.62 cm @ 100 dpi`, `initialPath` con `;`, `$()` y backticks pasado como elemento inerte de un array a `execFile`, y bind observado en `127.0.0.1`.
+
+**L5 (2026-10-24):** Portable desktop packaging with Electron (`feature/electron-portable`).
+- D1 (`7108b70`): `createApp` accepts `staticDir`, path-less SPA fallback after `/api` routes, `start()` forwards `staticDir` and `pickFolder`. Backend 93/93.
+- D2 (`afcfec7`): `desktop/main.js` (single-instance lock, `port: 0`, userData config, window `show: false` + `ready-to-show`, `nodeIntegration: false`/`contextIsolation: true`/`sandbox: true`, close server on `before-quit`), `desktop/pickFolder.js` (`createElectronPicker` wraps `dialog.showOpenDialog` with conditional call shape). Backend 101/101, frontend 44/44.
+- D3 (`016bf49`): `electron-builder.yml` with `appId: com.alejoba.ajuste-resolucion`, `productName: Ajuste de Resolucion`, `executableName: ajuste-de-resolucion`, `syncDesktopName: true`, `asar: true`, `asarUnpack: ['**/node_modules/sharp/**', '**/node_modules/@img/**']`, `npmRebuild: false`, targets AppImage/portable/dmg+zip.
+- D4 (inline): Built AppImage `Ajuste de Resolucion-1.0.0-x86_64.AppImage` (137M). End-to-end verified: `GET /api/config` → schema v2; `GET /` → SPA; `POST /api/process` with 2 fixtures at 10cm×7.5cm@300dpi → outputs 1181×787 and 886×886 JPEG; userData at `~/.config/Ajuste de Resolucion/`; no `config.json` next to executable; runs with `PATH=/usr/bin:/bin` (no system Node).
+- Suites green: Jest 12/12 (101 tests), Vitest 7/7 (44 tests).
+- Known: AppImage needs `libfuse2` for direct launch (use `--appimage-extract-and-run` or install `libfuse2`); Wayland/Vulkan error cosmetic; SharpElectronLinux advisory accepted; @img multi-platform binaries add ~40MB.
+
+**Decisión de stack para empaquetado (2026-10-23):** Electron sobre Tauri y Node SEA. Electron reutiliza el backend Node sin cambios y reemplaza `zenity`/`osascript`/PowerShell por un solo `dialog.showOpenDialog` por plataforma. Tauri habría requerido reescribir el backend en Rust; Node SEA no tiene diálogos nativos ni empaquetado multiplataforma maduro.
