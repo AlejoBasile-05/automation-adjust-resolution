@@ -16,6 +16,9 @@ asarUnpack:
 # Electron's ABI is unnecessary and would require a native toolchain.
 npmRebuild: false
 
+# Disable auto-publishing in CI (we only want artifacts, not GitHub Releases)
+publish: null
+
 files:
   - '**/*'
   - '!**/test/**'
