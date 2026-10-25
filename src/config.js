@@ -16,6 +16,11 @@ const DEFAULT_CONFIG = {
   fit: 'inside',
   quality: 80,
   format: 'jpeg',
+  // Smart crop configuration (hybrid face detection + attention fallback)
+  smartCrop: {
+    enabled: false,        // OFF by default for backward compatibility
+    mode: 'face-attention' // Face detection first, then attention fallback
+  }
 };
 
 const MAX_DIMENSION_CM = 1000;
@@ -39,17 +44,22 @@ function validateGeometry(config = {}) {
   if (!Number.isInteger(config.dpi) || config.dpi < 1 || config.dpi > MAX_DPI) {
     return `La resolución debe ser un número entero entre 1 y ${MAX_DPI}.`;
   }
+  
+  // Validate smartCrop configuration
+  if (config.smartCrop) {
+    if (typeof config.smartCrop.enabled !== 'boolean') {
+      return 'smartCrop.enabled debe ser true o false.';
+    }
+    if (config.smartCrop.mode && config.smartCrop.mode !== 'face-attention') {
+      return 'smartCrop.mode debe ser "face-attention".';
+    }
+  }
+  
   return null;
 }
 
 /**
  * Normalize a persisted config to schema v2.
- *
- * A config without `schemaVersion: 2` is a legacy pixel config and its
- * `width`/`height` are converted at 300 DPI. A legacy value is never
- * reinterpreted as centimeters. A config that already carries `widthCm`/
- * `heightCm` but no `schemaVersion` is centimeters written by an older build,
- * so its geometry is preserved instead of falling back to the pixel defaults.
  */
 function migrateConfig(raw = {}) {
   const carriesCentimeters = raw.widthCm != null || raw.heightCm != null;

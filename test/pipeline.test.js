@@ -301,6 +301,7 @@ describe('config — JSON persistence', () => {
       fit: 'fill',
       quality: 80,
       format: 'webp',
+      smartCrop: { enabled: false, mode: 'face-attention' },
     };
 
     await saveConfig(configPath, config);

@@ -120,6 +120,7 @@ export default function ConfigForm({
       heightCm: true,
       dpi: true,
       quality: true,
+      smartCrop: true,
     });
     if (hasErrors(errors)) return;
     onSave(normalizeConfig(values));
@@ -259,6 +260,67 @@ export default function ConfigForm({
               ≈ {cmToPx(values.widthCm, values.dpi)} × {cmToPx(values.heightCm, values.dpi)} px
             </p>
           </div>
+        </Section>
+
+        <Section index="04" title="Recorte inteligente">
+          <Field 
+            id="smartCropEnabled" 
+            label="Recorte inteligente (rostros)"
+            hint="Detecta caras y las centra en el recorte"
+          >
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={values.smartCrop?.enabled}
+                onChange={update('smartCrop.enabled')}
+                className="rounded border-ink-600 bg-ink-900 text-copper-400 focus:ring-copper-400 h-4 w-4"
+              />
+              <span className="font-mono text-sm text-mist-100">
+                Activar detección de rostros
+              </span>
+            </label>
+          </Field>
+
+          <Field 
+            id="smartCropMode" 
+            label="Modo de respaldo"
+            hint="Si no hay rostros, usa atención visual"
+            error={errorFor('smartCropMode')}
+          >
+            <select
+              value={values.smartCrop?.mode}
+              onChange={update('smartCrop.mode')}
+              disabled={!values.smartCrop?.enabled}
+              className={`${inputClasses} appearance-none ${!values.smartCrop?.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <option value="face-attention">
+                Rostros → Atención visual (recomendado)
+              </option>
+            </select>
+          </Field>
+
+          <div className="sm:col-span-2">
+            <p className="text-xs text-mist-400 leading-relaxed">
+              <strong>Cómo funciona:</strong>
+              <br />
+              1. Escanea la imagen buscando rostros (BlazeFace, ~3MB WASM)
+              <br />
+              2. Si hay caras: recorta centrándolas con margen extra arriba (no corta frente/pelo)
+              <br />
+              3. Si no hay caras: usa <code>position: 'attention'</code> de Sharp (paisajes, objetos, comida)
+              <br />
+              4. Solo aplica con <strong>Modo: Fill</strong> (recorta para llenar)
+            </p>
+          </div>
+
+          {values.smartCrop?.enabled && values.fit !== 'cover' && (
+            <div className="sm:col-span-2">
+              <p className="text-xs text-signal-warn" role="status">
+                ⚠ El recorte inteligente solo funciona con <strong>Modo: Fill</strong>. 
+                Con "Inside" no hay recorte.
+              </p>
+            </div>
+          )}
         </Section>
 
         <Section index="03" title="Codificación">
