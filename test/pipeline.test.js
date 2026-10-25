@@ -126,6 +126,36 @@ describe('S2 — resize: resolution adjustment', () => {
 
     expect(meta.format).toBe('webp');
   });
+
+  test('writes the specified DPI to output image metadata', async () => {
+    const source = path.join(tmpRoot, 'dpi-test.jpg');
+    await writeImage(source, { width: 200, height: 100 });
+
+    const output = await resize(source, {
+      width: 100,
+      height: 100,
+      fit: 'inside',
+      dpi: 300,
+    });
+    const meta = await sharp(output).metadata();
+
+    expect(meta.density).toBe(300);
+  });
+
+  test('defaults to 72 DPI when no DPI is specified', async () => {
+    const source = path.join(tmpRoot, 'dpi-default.jpg');
+    await writeImage(source, { width: 200, height: 100 });
+
+    const output = await resize(source, {
+      width: 100,
+      height: 100,
+      fit: 'inside',
+    });
+    const meta = await sharp(output).metadata();
+
+    // Sharp defaults to 72 DPI when density is not explicitly set
+    expect(meta.density).toBe(72);
+  });
 });
 
 describe('S3 — writer: output persistence', () => {
@@ -227,6 +257,29 @@ describe('T1.4 — orchestrator: discover → resize → write pipeline', () => 
     expect(summary.total).toBe(2);
     expect(summary.errors).toHaveLength(1);
     expect(fs.existsSync(path.join(destPath, 'good.png'))).toBe(true);
+  });
+
+  test('preserves specified DPI through the full pipeline', async () => {
+    const sourcePath = path.join(tmpRoot, 'src');
+    const destPath = path.join(tmpRoot, 'dest');
+    // Square image so inside fit produces exact target dimensions
+    await writeImage(path.join(sourcePath, 'test.jpg'), { width: 200, height: 200 });
+
+    const pipeline = createPipeline({
+      sourcePath,
+      destPath,
+      widthCm: 2.54, // 1 inch at 300 DPI = 300px
+      heightCm: 2.54,
+      dpi: 300,
+      fit: 'inside',
+    });
+
+    await pipeline.run();
+
+    const written = await sharp(path.join(destPath, 'test.jpg')).metadata();
+    expect(written.width).toBe(300);
+    expect(written.height).toBe(300);
+    expect(written.density).toBe(300);
   });
 });
 

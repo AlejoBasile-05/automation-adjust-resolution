@@ -56,7 +56,7 @@ function classifyWriteError(file, cause) {
 
 async function resizeStep(file, config) {
   try {
-    return await resize(file, config);
+    return await resize(file, { ...config, dpi: config.dpi });
   } catch (cause) {
     throw classifyResizeError(file, cause);
   }
