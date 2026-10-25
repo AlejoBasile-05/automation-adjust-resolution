@@ -105,11 +105,11 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          artifacts/linux-artifacts/*.AppImage
-          artifacts/windows-artifacts/*.exe
-          artifacts/macos-artifacts/*.dmg
-          artifacts/macos-artifacts/*.zip
-          artifacts/dir-artifacts/*.tar.gz
+          artifacts/linux-artifacts/**/*.AppImage
+          artifacts/windows-artifacts/**/*.exe
+          artifacts/macos-artifacts/**/*.dmg
+          artifacts/macos-artifacts/**/*.zip
+          artifacts/dir-artifacts/**/*.tar.gz
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
         draft: false
