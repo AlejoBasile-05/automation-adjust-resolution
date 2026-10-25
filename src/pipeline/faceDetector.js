@@ -1,11 +1,18 @@
 const tf = require('@tensorflow/tfjs');
-const tfnode = require('@tensorflow/tfjs-node');
 require('@tensorflow/tfjs-backend-wasm');
 const blazeface = require('@tensorflow-models/blazeface');
 const fs = require('fs');
 
+// Try to load tfjs-node (optional dependency for Node.js decodeImage)
+let tfnode = null;
+try {
+  tfnode = require('@tensorflow/tfjs-node');
+} catch (e) {
+  console.warn('[faceDetector] tfjs-node not available, face detection will use WASM-only mode (no decodeImage)');
+}
+
 // Ensure tf.node namespace is available (tfjs-node adds it)
-if (!tf.node) {
+if (!tf.node && tfnode) {
   tf.node = tfnode.node;
 }
 
@@ -16,9 +23,21 @@ let modelLoading = null;
  * Initialize TensorFlow.js with WASM backend
  */
 async function initTF() {
-  // Use tensorflow backend for Node.js operations (decodeImage)
-  await tf.setBackend('tensorflow');
-  await tf.ready();
+  // Try tensorflow backend first (needed for decodeImage), fallback to WASM
+  const backends = tfnode ? ['tensorflow', 'wasm'] : ['wasm'];
+  
+  for (const backend of backends) {
+    try {
+      await tf.setBackend(backend);
+      await tf.ready();
+      console.log(`[faceDetector] Using backend: ${backend}`);
+      return;
+    } catch (e) {
+      console.warn(`[faceDetector] Backend ${backend} failed: ${e.message}`);
+    }
+  }
+  
+  throw new Error('No suitable TensorFlow.js backend available');
 }
 
 /**
@@ -55,15 +74,29 @@ async function detectFaces(imageSource) {
     if (typeof imageSource === 'string') {
       // File path
       const imageBuffer = fs.readFileSync(imageSource);
-      inputTensor = tf.node.decodeImage(imageBuffer, 3);
+      if (tf.node && tf.node.decodeImage) {
+        inputTensor = tf.node.decodeImage(imageBuffer, 3);
+      } else {
+        // Fallback: use tf.io.decodeJpeg/tf.io.decodePng or load via browser-style
+        // For now, throw a clear error if tfjs-node not available
+        throw new Error('tfjs-node required for file path input. Provide Buffer/Uint8Array/tensor instead.');
+      }
       shouldDispose = true;
     } else if (Buffer.isBuffer(imageSource)) {
       // Buffer
-      inputTensor = tf.node.decodeImage(imageSource, 3);
+      if (tf.node && tf.node.decodeImage) {
+        inputTensor = tf.node.decodeImage(imageSource, 3);
+      } else {
+        throw new Error('tfjs-node required for Buffer input. Provide Uint8Array/tensor instead.');
+      }
       shouldDispose = true;
     } else if (imageSource instanceof Uint8Array) {
       // Uint8Array
-      inputTensor = tf.node.decodeImage(Buffer.from(imageSource), 3);
+      if (tf.node && tf.node.decodeImage) {
+        inputTensor = tf.node.decodeImage(Buffer.from(imageSource), 3);
+      } else {
+        throw new Error('tfjs-node required for Uint8Array input. Provide tensor instead.');
+      }
       shouldDispose = true;
     } else if (tf.isTensor(imageSource)) {
       // Already a tensor
