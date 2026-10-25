@@ -11,6 +11,8 @@ asar: true
 asarUnpack:
   - '**/node_modules/sharp/**'
   - '**/node_modules/@img/**'
+  - '**/node_modules/@tensorflow/**'
+  - '**/node_modules/@tensorflow-models/**'
 
 # sharp 0.35 is N-API based and ships prebuilt binaries; rebuilding against
 # Electron's ABI is unnecessary and would require a native toolchain.

@@ -2,13 +2,14 @@ const tf = require('@tensorflow/tfjs');
 require('@tensorflow/tfjs-backend-wasm');
 const blazeface = require('@tensorflow-models/blazeface');
 const fs = require('fs');
+const sharp = require('sharp');
 
 // Try to load tfjs-node (optional dependency for Node.js decodeImage)
 let tfnode = null;
 try {
   tfnode = require('@tensorflow/tfjs-node');
 } catch (e) {
-  console.warn('[faceDetector] tfjs-node not available, face detection will use WASM-only mode (no decodeImage)');
+  console.warn('[faceDetector] tfjs-node not available, will use Sharp for image decoding + WASM backend');
 }
 
 // Ensure tf.node namespace is available (tfjs-node adds it)
@@ -23,8 +24,9 @@ let modelLoading = null;
  * Initialize TensorFlow.js with WASM backend
  */
 async function initTF() {
-  // Try tensorflow backend first (needed for decodeImage), fallback to WASM
-  const backends = tfnode ? ['tensorflow', 'wasm'] : ['wasm'];
+  // Always prefer WASM backend for consistency across platforms
+  // tfjs-node (tensorflow backend) is optional and may not work in all environments
+  const backends = ['wasm'];
   
   for (const backend of backends) {
     try {
@@ -59,6 +61,41 @@ async function getModel() {
 }
 
 /**
+ * Decodes an image using Sharp (works without tfjs-node) and returns a tf.Tensor
+ * @param {string|Buffer|Uint8Array} imageSource - File path, Buffer, or Uint8Array
+ * @returns {Promise<tf.Tensor>} Decoded image tensor [H, W, 3]
+ */
+async function decodeImageWithSharp(imageSource) {
+  let imageBuffer;
+  
+  if (typeof imageSource === 'string') {
+    imageBuffer = fs.readFileSync(imageSource);
+  } else if (Buffer.isBuffer(imageSource)) {
+    imageBuffer = imageSource;
+  } else if (imageSource instanceof Uint8Array) {
+    imageBuffer = Buffer.from(imageSource);
+  } else {
+    throw new Error('Unsupported image source type for Sharp decode. Expected string path, Buffer, or Uint8Array');
+  }
+
+  // Use Sharp to decode to raw RGB pixels
+  const { data, info } = await sharp(imageBuffer)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  
+  // Create tensor from raw RGB data
+  // data is Uint8Array of RGBRGBRGB..., info has width, height, channels
+  // BlazeFace expects float32 tensor with values in [0, 255] range
+  // Use tf.tensor3d with Float32Array for proper type
+  const floatData = new Float32Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    floatData[i] = data[i];
+  }
+  const tensor = tf.tensor3d(floatData, [info.height, info.width, info.channels]);
+  return tensor;
+}
+
+/**
  * Detects faces in an image
  * @param {string|Buffer|Uint8Array|tf.Tensor} imageSource - File path, Buffer, Uint8Array, or tensor
  * @returns {Promise<Array<{x: number, y: number, width: number, height: number, confidence: number, landmarks: Array}>>
@@ -71,32 +108,10 @@ async function detectFaces(imageSource) {
 
   try {
     // Convert input to tensor
-    if (typeof imageSource === 'string') {
-      // File path
-      const imageBuffer = fs.readFileSync(imageSource);
-      if (tf.node && tf.node.decodeImage) {
-        inputTensor = tf.node.decodeImage(imageBuffer, 3);
-      } else {
-        // Fallback: use tf.io.decodeJpeg/tf.io.decodePng or load via browser-style
-        // For now, throw a clear error if tfjs-node not available
-        throw new Error('tfjs-node required for file path input. Provide Buffer/Uint8Array/tensor instead.');
-      }
-      shouldDispose = true;
-    } else if (Buffer.isBuffer(imageSource)) {
-      // Buffer
-      if (tf.node && tf.node.decodeImage) {
-        inputTensor = tf.node.decodeImage(imageSource, 3);
-      } else {
-        throw new Error('tfjs-node required for Buffer input. Provide Uint8Array/tensor instead.');
-      }
-      shouldDispose = true;
-    } else if (imageSource instanceof Uint8Array) {
-      // Uint8Array
-      if (tf.node && tf.node.decodeImage) {
-        inputTensor = tf.node.decodeImage(Buffer.from(imageSource), 3);
-      } else {
-        throw new Error('tfjs-node required for Uint8Array input. Provide tensor instead.');
-      }
+    if (typeof imageSource === 'string' || Buffer.isBuffer(imageSource) || imageSource instanceof Uint8Array) {
+      // Use Sharp for decoding (works without tfjs-node native)
+      // This is the primary path - works on all platforms
+      inputTensor = await decodeImageWithSharp(imageSource);
       shouldDispose = true;
     } else if (tf.isTensor(imageSource)) {
       // Already a tensor
