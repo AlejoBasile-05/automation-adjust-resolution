@@ -28,6 +28,13 @@ function isDpi(value) {
   return Number.isInteger(numeric) && numeric >= 1 && numeric <= 1200;
 }
 
+function isSmartCropConfig(value) {
+  if (!value || typeof value !== 'object') return true; // Optional
+  if (typeof value.enabled !== 'boolean') return false;
+  if (value.mode && value.mode !== 'face-attention') return false;
+  return true;
+}
+
 export function validateConfig(values) {
   const errors = {};
 
@@ -38,6 +45,9 @@ export function validateConfig(values) {
   if (!isDpi(values.dpi)) errors.dpi = DPI_MESSAGE;
   if (!isQuality(values.quality)) {
     errors.quality = 'La calidad debe ser un número entero entre 1 y 100.';
+  }
+  if (!isSmartCropConfig(values.smartCrop)) {
+    errors.smartCropMode = 'Configuración de recorte inteligente inválida.';
   }
 
   return errors;
@@ -56,5 +66,9 @@ export function normalizeConfig(values) {
     heightCm: Number(values.heightCm),
     dpi: Number(values.dpi),
     quality: Number(values.quality),
+    smartCrop: values.smartCrop ? {
+      enabled: Boolean(values.smartCrop.enabled),
+      mode: values.smartCrop.mode || 'face-attention'
+    } : { enabled: false, mode: 'face-attention' }
   };
 }
