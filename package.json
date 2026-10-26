@@ -1,7 +1,7 @@
 {
   "name": "gustavo-automatizacion-images",
   "productName": "Ajuste de Resolucion",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Automated image resolution adjustment: scan a source folder, resize images with Sharp, and write results to a destination folder.",
   "main": "desktop/main.js",
   "engines": {
