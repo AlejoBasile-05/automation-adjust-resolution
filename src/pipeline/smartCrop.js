@@ -23,7 +23,7 @@ const { calculateFaceCrop, getAttentionPosition } = require('./cropCalculator');
  * @returns {Promise<Object>} Crop config: { position, crop?, facesDetected, error? }
  */
 async function analyzeSmartCrop(imagePath, targetWidth, targetHeight, options = {}) {
-  const { enabled = true, mode = 'face-attention' } = options;
+  const { enabled = false, mode = 'face-attention' } = options;
 
   if (!enabled) {
     return { position: 'center', facesDetected: 0 };

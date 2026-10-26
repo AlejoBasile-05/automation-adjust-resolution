@@ -62,6 +62,11 @@ function createApp(config = DEFAULT_CONFIG, runManager = new RunManager(), optio
     try {
       const current = await readConfig();
       const runConfig = { ...current, ...body };
+      // Auto-enable smart crop only when fit === 'cover' (the only mode where cropping occurs)
+      runConfig.smartCrop = {
+        enabled: runConfig.fit === 'cover',
+        mode: runConfig.smartCrop?.mode || 'face-attention'
+      };
       // Count the batch up front so subscribers receive `started` with the
       // total before the first per-file event.
       const files = await discover(runConfig.sourcePath);
